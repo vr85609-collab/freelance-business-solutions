@@ -1,10 +1,36 @@
 document.getElementById('year').textContent = new Date().getFullYear();
 
 const form = document.getElementById('quoteForm');
-form.addEventListener('submit', (event) => {
+const formStatus = document.getElementById('formStatus');
+const submitButton = form.querySelector('button[type="submit"]');
+
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const data = new FormData(form);
-  const subject = encodeURIComponent(`Freelance Project Inquiry — ${data.get('service')}`);
-  const body = encodeURIComponent(`Hi Victor,\n\nMy name is ${data.get('name')}.\n\nService: ${data.get('service')}\n\nProject details:\n${data.get('details')}\n\nMy email: ${data.get('email')}\n\nThanks!`);
-  window.location.href = `mailto:victorfreelancebusiness@gmail.com?subject=${subject}&body=${body}`;
+
+  const originalLabel = submitButton.textContent;
+  submitButton.disabled = true;
+  submitButton.textContent = 'Sending…';
+  formStatus.textContent = 'Sending your project request…';
+
+  try {
+    const response = await fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { Accept: 'application/json' }
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok || result.success === 'false' || result.success === false) {
+      throw new Error(result.message || 'Submission failed');
+    }
+
+    form.reset();
+    formStatus.textContent = 'Thank you! Your project request was sent successfully. Victor will follow up by email.';
+  } catch (error) {
+    formStatus.textContent = 'The request could not be sent. Please email victorfreelancebusiness@gmail.com directly.';
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = originalLabel;
+  }
 });

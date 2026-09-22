@@ -49,4 +49,5 @@ This repository is configured as a static Vercel project. Import the repository 
 
 ## Contact
 
-Victor Rodriguez — Full-Stack Developer / Freelance Business Solutions
+Victor Rodriguez — Full-Stack Developer / Freelance Business Solutions  
+Email: [victorfreelancebusiness@gmail.com](mailto:victorfreelancebusiness@gmail.com)

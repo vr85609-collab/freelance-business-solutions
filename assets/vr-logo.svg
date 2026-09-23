@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Victor Freelance Business Solutions logo</title>
+  <desc id="desc">Blue and violet VR monogram on a dark navy circle</desc>
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="46%" r="60%">
+      <stop offset="0" stop-color="#102d69"/>
+      <stop offset="0.58" stop-color="#071b48"/>
+      <stop offset="1" stop-color="#030d2b"/>
+    </radialGradient>
+    <linearGradient id="blue" x1="80" y1="110" x2="260" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#27c8ff"/>
+      <stop offset="1" stop-color="#2483ff"/>
+    </linearGradient>
+    <linearGradient id="violet" x1="210" y1="150" x2="430" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#773bff"/>
+      <stop offset="0.58" stop-color="#a349ff"/>
+      <stop offset="1" stop-color="#bf5cff"/>
+    </linearGradient>
+    <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <circle cx="256" cy="256" r="248" fill="url(#bg)" stroke="#132d68" stroke-width="4"/>
+  <g filter="url(#glow)" stroke-linejoin="round">
+    <path d="M78 145h52l112 230-27 51h-43L50 145h28z" fill="url(#blue)"/>
+    <path d="M144 145h51l62 134-27 55z" fill="url(#blue)" opacity=".96"/>
+    <path d="M190 405 310 145h92c52 0 84 31 84 76 0 34-19 59-51 70l59 114h-61l-67-130h35c23 0 34-13 34-32 0-18-12-29-34-29h-56L254 405z" fill="url(#violet)"/>
+    <circle cx="275" cy="282" r="30" fill="url(#violet)" stroke="#071846" stroke-width="12"/>
+  </g>
+</svg>

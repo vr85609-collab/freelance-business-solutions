@@ -19,6 +19,7 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
+::selection { background: #7747ed; color: #fff; }
 body:before {
   content: "";
   position: absolute;
@@ -59,6 +60,21 @@ textarea {
   align-items: center;
   gap: 11px;
 }
+.brand-name {
+  display: grid;
+  gap: 0;
+  line-height: 1;
+  font-size: 19px;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+}
+.brand-name b {
+  margin-top: 5px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #a986ff;
+}
 .brand img {
   width: 48px;
   height: 48px;
@@ -68,7 +84,7 @@ textarea {
 .hero h1 span,
 .card a,
 .text-link {
-  color: #48c7f4;
+  color: #62d4ff;
 }
 .brand small {
   font-size: 10px;
@@ -104,6 +120,16 @@ textarea {
   grid-template-columns: 1.08fr 0.92fr;
   gap: 75px;
   align-items: center;
+}
+.hero-copy { position: relative; }
+.hero-copy:before {
+  content: "";
+  display: block;
+  width: 48px;
+  height: 4px;
+  margin-bottom: 28px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #27c8ff, #a349ff);
 }
 .availability {
   display: inline-flex;
@@ -166,7 +192,7 @@ textarea {
   transform: translateY(-1px);
 }
 .primary {
-  background: #48c7f4;
+  background: linear-gradient(110deg, #3bc9ff, #7191ff);
   color: #04131e;
   box-shadow: 0 8px 28px #38bdf822;
 }
@@ -361,10 +387,17 @@ textarea {
   border-color: #31566f;
 }
 .card.featured {
-  border-color: #2c91b6;
+  border-color: #7352cc;
   box-shadow:
     0 18px 50px #0005,
-    0 0 0 1px #2b9ac522;
+    0 0 0 1px #a349ff33;
+}
+.card.featured:before {
+  content: "";
+  position: absolute;
+  inset: 0 20px auto;
+  height: 2px;
+  background: linear-gradient(90deg, #27c8ff, #a349ff);
 }
 .tag {
   position: absolute;
@@ -529,6 +562,7 @@ textarea {
   padding-top: 70px;
   padding-bottom: 70px;
 }
+.showcase { background: radial-gradient(circle at 90% 0%, #53248a33, transparent 42%), linear-gradient(120deg, #0b1725, #0b1e2d); }
 .showcase .btn {
   margin-top: 22px;
 }
@@ -799,9 +833,8 @@ footer p {
   .nav {
     padding: 0 18px;
   }
-  .brand small {
-    display: none;
-  }
+  .brand-name { font-size: 16px; }
+  .brand-name b { font-size: 8px; }
   .hero,
   .section {
     padding-left: 18px;

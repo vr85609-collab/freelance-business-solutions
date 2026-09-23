@@ -32,9 +32,12 @@ aside {
 .logo {
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   color: #fff;
   text-decoration: none;
 }
+.logo span { display: grid; font-size: 15px; font-weight: 800; line-height: 1.05; white-space: nowrap; }
+.logo b { color: #aa84ff; font-size: 9px; letter-spacing: .18em; text-transform: uppercase; margin-top: 4px; }
 .logo img {
   width: 64px;
   height: 64px;
@@ -42,7 +45,7 @@ aside {
   object-fit: contain;
 }
 .eyebrow {
-  color: #0891b2;
+  color: #365ceb;
 }
 .side-label {
   font-size: 10px;
@@ -113,7 +116,7 @@ h2 {
   cursor: pointer;
 }
 .primary {
-  background: #0891b2;
+  background: linear-gradient(110deg, #167fc5, #6748cd);
   color: #fff;
 }
 .ghost {
@@ -198,7 +201,7 @@ h2 {
 }
 .fill {
   height: 100%;
-  background: #0891b2;
+  background: linear-gradient(90deg, #27a9df, #7952d8);
   border-radius: 10px;
 }
 .activity {

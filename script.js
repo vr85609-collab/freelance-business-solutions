@@ -26,7 +26,7 @@ form.addEventListener('submit', async (event) => {
     }
 
     form.reset();
-    formStatus.textContent = 'Thank you! Your project request was sent successfully. Victor will follow up by email.';
+    formStatus.textContent = 'Thank you! Your request was sent to VR Forge Digital. Victor will follow up by email.';
   } catch (error) {
     formStatus.textContent = 'The request could not be sent. Please email victorfreelancebusiness@gmail.com directly.';
   } finally {

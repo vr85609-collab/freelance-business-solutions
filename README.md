@@ -1,53 +1,35 @@
-# Freelance Business Solutions
+# VR Forge Digital
 
-> I convert paper forms, spreadsheets, and manual business processes into simple web applications and dashboards.
+**Websites, apps, and systems built around your business.**
 
-A client-focused freelance portfolio for **Victor Rodriguez**, built to demonstrate practical business automation rather than generic website development.
+VR Forge Digital is the freelance development business of Victor Rodriguez. The site explains three services, provides a project inquiry form, and includes a sample workflow dashboard that visitors can try.
 
 ## Services
 
-| Service | Price | What it solves |
+| Service | Starting range | Scope |
 | --- | ---: | --- |
-| Website Repair | $100–$250 | Mobile issues, broken links, layout problems, and content updates |
-| Business Landing Page | $400–$800 | Professional responsive page, lead capture, basic SEO, and deployment |
-| Workflow Dashboard | $750–$2,000+ | Digital forms, tracking, dashboards, reporting, and exports |
+| Website Repair | $100–$250 | Mobile, layout, link, content, and basic performance fixes |
+| Business Landing Page | $400–$800 | Responsive page, lead capture, basic SEO, and deployment |
+| Workflow Dashboard | $750–$2,000+ | Forms, tracking, reporting, and exports |
 
-## Interactive Workflow Demo
+Prices depend on final project scope. The contact form currently uses FormSubmit and sends to `victorfreelancebusiness@gmail.com`. If the business email changes, update the visible mailto links, form action, hidden subject, and form error copy together. FormSubmit setup and inbox delivery should be verified in the destination mailbox before treating the form as live.
 
-Open `demo.html` from the deployed site to try a working example. The demo includes:
+## Brand
 
-- Digital request submission
-- Open / In Progress / Completed workflow states
-- Search and filtering
-- Live dashboard metrics
-- Recent activity
-- Status updates
-- CSV export
-- Browser persistence with localStorage
+The existing VR monogram remains the brand mark. See [BRAND.md](BRAND.md) for naming, copy, palette, and usage. The existing Vercel URL and repository path remain unchanged to preserve links until a new domain is selected and configured.
 
-The demo intentionally uses browser storage instead of a production database so visitors can safely interact with it without affecting real business data.
+## Sample workflow dashboard
 
-## Stack
-
-HTML5, CSS3, JavaScript, responsive design, localStorage, CSV export, GitHub, and Vercel-ready deployment configuration.
-
-For client projects, the same interface can be connected to a full application stack such as React, Node.js/Express, PostgreSQL, REST APIs, authentication, and role-based workflows.
+`demo.html` lets visitors submit sample requests, change statuses, search/filter records, watch dashboard counts update, and export CSV. It stores data in the visitor's browser with `localStorage`; it does not contain client records or a production backend.
 
 ## Deployment
 
-This repository is configured as a static Vercel project. Import the repository into Vercel and deploy from the `main` branch. No build command or environment variables are required for the portfolio/demo version.
+This is a static Vercel project configured in `vercel.json`. Vercel can deploy the `main` branch with no build command or environment variables. Verify the production URL after deployment and test the form from the published origin.
 
-## Project Structure
+## Files
 
-- `index.html` — freelance business homepage
-- `styles.css` — portfolio styling
-- `script.js` — quote-request interaction
-- `demo.html` — interactive workflow application demo
-- `demo.css` — dashboard styling
-- `demo.js` — demo records, workflow logic, filters, metrics, and CSV export
-- `vercel.json` — deployment/security header configuration
-
-## Contact
-
-Victor Rodriguez — Full-Stack Developer / Freelance Business Solutions  
-Email: [victorfreelancebusiness@gmail.com](mailto:victorfreelancebusiness@gmail.com)
+- `index.html`, `styles.css`, `script.js`: main site and contact form
+- `demo.html`, `demo.css`, `demo.js`: interactive sample dashboard
+- `assets/vr-logo.svg`: existing VR monogram with updated accessible title
+- `BRAND.md`: brand rules and reusable copy
+- `vercel.json`: Vercel settings and response headers

@@ -9,10 +9,10 @@ VR Forge Digital is the freelance development business of Victor Rodriguez. The 
 | Service | Starting range | Scope |
 | --- | ---: | --- |
 | Website Repair | $100–$250 | Mobile, layout, link, content, and basic performance fixes |
-| Business Landing Page | $400–$800 | Responsive page, lead capture, basic SEO, and deployment |
+| Business Landing Page | $99/month | Responsive managed website, hosting/SSL, lead capture, basic SEO, routine content updates, and support |
 | Workflow Dashboard | $750–$2,000+ | Forms, tracking, reporting, and exports |
 
-Prices depend on final project scope. The contact form currently uses FormSubmit and sends to `victorfreelancebusiness@gmail.com`. If the business email changes, update the visible mailto links, form action, hidden subject, and form error copy together. FormSubmit setup and inbox delivery should be verified in the destination mailbox before treating the form as live.
+Website Repair and Workflow Dashboard prices depend on final project scope. The Business Landing Page is offered as a $99/month managed subscription with no large upfront website fee. The contact form currently uses FormSubmit and sends to `victorfreelancebusiness@gmail.com`. If the business email changes, update the visible mailto links, form action, hidden subject, and form error copy together. FormSubmit setup and inbox delivery should be verified in the destination mailbox before treating the form as live.
 
 ## Brand
 

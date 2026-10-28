@@ -1,14 +1,18 @@
 # Aquaemoticons Play & Win — Aqua Arcade (prototype)
 
-A browser-based mini-game arcade with six games, optional daily featured challenges, virtual stars, browser-local progress, and simulated rewards.
+A browser-based mini-game arcade with twelve games, optional daily featured challenges, virtual stars, browser-local progress, and simulated rewards.
 
-## Games
-1. Bubble Guess — server-validated 10-round lucky bubble guesses.
-2. Tic-Tac Tactics — play X against a minimax opponent.
-3. Memory Match — find eight shuffled icon pairs.
-4. Pattern Pulse — repeat increasingly long color sequences.
-5. Light Switch — Lights Out logic puzzle on a 4x4 board.
-6. Merge 2048 — combine matching tiles using arrow keys, screen buttons, or swipe gestures.
+## Games — two choices in each category
+| Category | Option 1 | Option 2 |
+|---|---|---|
+| Strategy | Tic-Tac Tactics (minimax CPU) | Connect Four (computer opponent) |
+| Memory | Memory Match (8 pairs) | Word Recall (remember 5 words) |
+| Concentration | Pattern Pulse (growing sequences) | Number Sprint (tap 1–16 in order) |
+| Logic | Light Switch (Lights Out puzzle) | Codebreaker (3-digit deduction game) |
+| Planning | Merge 2048 (combine tiles) | Slide Puzzle (3x3 number slide) |
+| Luck | Bubble Guess (server-checked) | Higher or Lower (5 guesses) |
+
+12 playable prototypes in total. Games are intended to work on mobile and desktop. Test every game on the deployed Node server before linking from your storefront.
 
 ## Return-play features
 - Rotating daily featured game, with a **one-time virtual 5-star bonus** upon completion.
@@ -36,4 +40,4 @@ For real rewards later, build:
 6. Add the remaining original games when their source is available and deploy to a standalone HTTPS host (e.g. Vercel with appropriate Node hosting or a compatible Node server).
 
 ## Notes
-This is a prototype, not a verified production deployment. The full six-game browser UI has been committed to the `aquaemoticons-play-win` development branch of the `vr85609-collab/freelance-business-solutions` repository in the `aqua-play-win/` folder. It is intentionally isolated from the repository's `main` branch.
+This is a prototype, not a verified production deployment. The twelve-game browser UI has been committed to the `aquaemoticons-play-win` development branch of the `vr85609-collab/freelance-business-solutions` repository in the `aqua-play-win/` folder. It is intentionally isolated from the repository's `main` branch.

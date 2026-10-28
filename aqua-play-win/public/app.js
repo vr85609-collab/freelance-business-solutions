@@ -17,7 +17,7 @@ function renderDaily(){const d=today(),done=!!progress.daily[d];$('#dailyBadge')
 function win(stars=5,note='Challenge complete!'){if(finished)return;finished=true;progress.stars+=stars;progress.finished++;if(!progress.dates.includes(today()))progress.dates.push(today());if(dailyMode&&!progress.daily[today()]){progress.daily[today()]=true;progress.stars+=5;note+=' Daily challenge bonus: 5 stars!'}save();feedback.textContent='🎉 '+note+' +'+stars+' stars';btn('Play again',()=>open(game,dailyMode));btn('Explore games',home)}
 function makeBoard(c,klass=''){board.className='board '+klass;c.forEach((v,i)=>{let b=document.createElement('button');b.textContent=v;b.dataset.index=i;board.appendChild(b)});return [...board.children]}
 function home(){gameId++;game=null;$('#play').classList.add('hidden');$('#catalog').classList.remove('hidden');document.body.dataset.mode='home'}
-function open(name,asDaily=false){gameId++;run=gameId;game=name;dailyMode=asDaily;finished=false;clean();$('#play').classList.remove('hidden');$('#catalog').classList.add('hidden');document.body.dataset.mode='playing';$('#gameTitle').textContent=keys[name];$('#genre').textContent=asDaily?'☀️ Daily Challenge':'🎮 Free Play';$('#instructions').textContent=tips[name];$('#play').scrollIntoView({block:'start',behavior:'smooth'});({bubbles,tictac,memory,sequence,lights,twenty,connect,recall,focus,code,slider,higher}[name])()}
+function open(name,asDaily=false){gameId++;run=gameId;game=name;dailyMode=asDaily;finished=false;clean();$('#play').classList.remove('hidden');$('#catalog').classList.add('hidden');document.body.dataset.mode='playing';$('#gameTitle').textContent=keys[name];$('#genre').textContent=asDaily?'☀️ Daily Challenge':'🎮 Free Play';$('#instructions').textContent='Need help? Use the visual example below or the ⓘ Info button.';updateQuickGuide(name);$('#play').scrollIntoView({block:'start',behavior:'smooth'});({bubbles,tictac,memory,sequence,lights,twenty,connect,recall,focus,code,slider,higher}[name])()}
 document.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>open(el.dataset.game));
 $('#back').onclick=home;$('#dailyStart').onclick=()=>open(dailyGame(),true);$('#dailyButton').onclick=()=>open(dailyGame(),true);
 async function api(path,obj){let r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});let v=await r.json();if(!r.ok)throw Error(v.error||'Request failed');return v}
@@ -26,7 +26,7 @@ function tictac(){let a=Array(9).fill(''),over=false;const bs=makeBoard(a,'ticta
 function minimax(p,turn,depth=0){const w=winner(p);if(w)return {score:w==='O'?10-depth:w==='X'?depth-10:0};let best={score:turn==='O'?-Infinity:Infinity,index:-1};for(let i=0;i<9;i++)if(!p[i]){p[i]=turn;const score=minimax(p,turn==='O'?'X':'O',depth+1).score;p[i]='';if(turn==='O'?score>best.score:score<best.score)best={score,index:i}}return best}
 function refresh(){bs.forEach((b,i)=>{b.textContent=a[i]||'·';b.disabled=!!a[i]||over})}
 function check(){let w=winner(a);if(!w)return false;over=true;refresh();if(w==='X')win(15,'You outsmarted the computer!');else{feedback.textContent=w==='tie'?'A hard-fought draw!':'The computer wins this round. Try another tactic!';btn('Play again',()=>open('tictac'))}return true}
-bs.forEach((b,i)=>b.onclick=()=>{if(a[i]||over)return;a[i]='X';refresh();if(check())return;let next=minimax(a,'O').index;if(next>=0)a[next]='O';refresh();check()});refresh()}
+bs.forEach((b,i)=>b.onclick=()=>{if(a[i]||over)return;a[i]='X';refresh();if(check())return;let next=Math.random()<0.72?minimax(a,'O').index:shuffle(a.map((v,i)=>v?-1:i).filter(i=>i>=0))[0];if(next>=0)a[next]='O';refresh();check()});refresh()}
 function memory(){let icons=['🌈','🧩','🍀','⭐','🐬','🎈','🚀','💜'],deck=shuffle([...icons,...icons]),revealed=[],matched=new Set(),moves=0,busy=false;const bs=makeBoard(Array(16).fill('❔'),'memory');status.textContent='Pairs found: 0 / 8 • Attempts: 0';bs.forEach((b,i)=>b.onclick=()=>{if(busy||matched.has(i)||revealed.includes(i))return;b.textContent=deck[i];revealed.push(i);if(revealed.length===2){moves++;const [x,y]=revealed;if(deck[x]===deck[y]){matched.add(x);matched.add(y);bs[x].classList.add('matched');bs[y].classList.add('matched');revealed=[];if(matched.size===16)win(Math.max(5,25-Math.max(0,moves-8)),'All eight pairs found in '+moves+' attempts!')}else{busy=true;let token=run;setTimeout(()=>{if(token!==run)return;bs[x].textContent='❔';bs[y].textContent='❔';revealed=[];busy=false},800)}}status.textContent='Pairs found: '+matched.size/2+' / 8 • Attempts: '+moves})}
 function sequence(){let pattern=[],pos=0,accept=false,level=0;const colors=['🔴','🔵','🟢','🟡'],bs=makeBoard(colors,'sequence');function next(){if(game!=='sequence')return;accept=false;pos=0;pattern.push(rnd(4));level++;status.textContent='Level '+level+' / 5';feedback.textContent='Watch the pattern...';let token=run;bs.forEach(b=>b.disabled=true);pattern.forEach((n,i)=>{setTimeout(()=>{if(token!==run)return;bs[n].classList.add('on')},500+i*750);setTimeout(()=>{if(token!==run)return;bs[n].classList.remove('on');if(i===pattern.length-1){accept=true;bs.forEach(b=>b.disabled=false);feedback.textContent='Your turn: repeat '+pattern.length+' colors'}},900+i*750)})}bs.forEach((b,i)=>b.onclick=()=>{if(!accept)return;if(i!==pattern[pos]){accept=false;feedback.textContent='Not quite! Restart and try a new pattern.';btn('Try again',()=>open('sequence'));return}pos++;if(pos===pattern.length){accept=false;bs.forEach(x=>x.disabled=true);if(level>=5)win(20,'You remembered five levels!');else{feedback.textContent='Great memory!';setTimeout(()=>{if(game==='sequence'&&run===gameId)next()},800)}}});next()}
 function lights(){let cells=Array(16).fill(false);const adj=i=>[i,i-4,i+4,...(i%4?[i-1]:[]),...(i%4<3?[i+1]:[])].filter(j=>j>=0&&j<16);function toggle(i){adj(i).forEach(j=>cells[j]=!cells[j])}for(let k=0;k<8;k++)toggle(rnd(16));if(!cells.some(Boolean))toggle(5);let moves=0;const bs=makeBoard(Array(16).fill(''),'lights');function show(){bs.forEach((b,i)=>{b.textContent=cells[i]?'💡':'·';b.classList.toggle('on',cells[i]);b.disabled=finished});status.textContent='Moves: '+moves+' • Lights on: '+cells.filter(Boolean).length}bs.forEach((b,i)=>b.onclick=()=>{toggle(i);moves++;show();if(!cells.some(Boolean))win(Math.max(5,35-moves),'All lights switched off in '+moves+' moves!')});show()}
@@ -64,7 +64,7 @@ function recall(){
 }
 function focus(){
  const nums=shuffle(Array.from({length:16},(_,i)=>i+1));let next=1;
- const bs=makeBoard(nums,'lights');status.textContent='Next number: 1';bs.forEach((b,i)=>{b.textContent=nums[i];b.onclick=()=>{if(nums[i]!==next)return;b.disabled=true;b.classList.add('matched');b.textContent='✓';next++;status.textContent=next<=16?'Next number: '+next:'All found!';if(next===17)win(20,'All numbers found in order!')}})
+ const bs=makeBoard(nums,'lights');status.textContent='Next number: 1';bs.forEach((b,i)=>{b.textContent=nums[i];b.onclick=()=>{if(nums[i]!==next){feedback.textContent='Find '+next+' first. Follow the numbers in ascending order.';return}feedback.textContent='Great! Keep going.';b.disabled=true;b.classList.add('matched');b.textContent='✓';next++;status.textContent=next<=16?'Next number: '+next:'All found!';if(next===17)win(20,'All numbers found in order!')}})
 }
 function code(){
  const target=Array.from({length:3},()=>rnd(5));let turn=0;
@@ -84,7 +84,7 @@ function higher(){
  let current=rnd(10)+1,turn=1,correct=0;
  board.className='board sequence';const buttons=makeBoard(['⬆️ HIGHER','⬇️ LOWER'],'sequence');
  function draw(){status.textContent='Round '+turn+' / 5 • '+correct+' correct';feedback.textContent='Current number: '+current+' (1–10). What comes next?'}
- buttons.forEach((b,i)=>b.onclick=()=>{if(finished)return;const next=rnd(10)+1;const right=i===0?next>current:next<current;if(right)correct++;feedback.textContent='Next number was '+next+'. '+(right?'Correct!':'Not this time.');current=next;if(turn>=5){buttons.forEach(x=>x.disabled=true);win(5+correct*2,'You guessed '+correct+' of 5 correctly!')}else{turn++;status.textContent='Round '+turn+' / 5 • '+correct+' correct';setTimeout(()=>{if(game==='higher')draw()},650)}});draw()
+ let waiting=false;buttons.forEach((b,i)=>b.onclick=()=>{if(finished||waiting)return;waiting=true;buttons.forEach(x=>x.disabled=true);const next=rnd(10)+1;const right=i===0?next>current:next<current;if(right)correct++;feedback.textContent='Next number: '+next+'. '+(right?'✓ Good guess!':'Not quite (ties count as incorrect).');current=next;if(turn>=5){win(5+correct*2,'You guessed '+correct+' out of 5 correctly!');return}turn++;status.textContent='Round '+turn+' / 5 • '+correct+' correct';const token=run;setTimeout(()=>{if(game!=='higher'||run!==token)return;waiting=false;buttons.forEach(x=>x.disabled=false);draw()},1100)});draw()
 }
 
 
@@ -214,3 +214,12 @@ document.querySelectorAll('#catalog .tile[data-game]').forEach(tile=>{
   holder.appendChild(b);
 });
 
+
+/* Inline objective cards and one-tap walkthrough. Always visible during play. */
+function updateQuickGuide(id){
+ const info=gameHelp[id];if(!info)return;
+ $('#quickRules').textContent=info.rules;
+ $('#quickWin').textContent=info.win;
+ $('#quickReward').textContent=info.reward;
+}
+$('#quickExample').onclick=()=>{if(game)showHelp(game)};

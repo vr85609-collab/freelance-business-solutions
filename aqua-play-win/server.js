@@ -24,6 +24,7 @@ const server=http.createServer(async(req,res)=>{
  }
  if(req.method==='GET'&&url.pathname==='/api/config')return json(res,200,{shop:'https://aquaemoticons.com',realDiscountsEnabled:false,minimumPurchase:25});
  if(req.method==='GET'&&(url.pathname==='/'||url.pathname==='/index.html')){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, must-revalidate','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'"});res.end(await readFile(new URL('./public/index.html',import.meta.url)));return}
+ if(req.method==='GET'&&url.pathname==='/theme.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/theme.js',import.meta.url)));return}
  if(req.method==='GET'&&url.pathname==='/app.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/app.js',import.meta.url)));return}
  json(res,404,{error:'Not found'});
  }catch(e){json(res,400,{error:e.message||'Invalid request'})}

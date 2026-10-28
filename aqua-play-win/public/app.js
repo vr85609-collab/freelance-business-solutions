@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s);
 const board=$('#board'),feedback=$('#feedback'),status=$('#playStatus'),controls=$('#gameControls');
 const keys={bubbles:'Bubble Guess',tictac:'Tic-Tac Tactics',memory:'Memory Match',sequence:'Pattern Pulse',lights:'Light Switch',twenty:'Merge 2048',connect:'Connect Four',recall:'Word Recall',focus:'Number Sprint',code:'Codebreaker',slider:'Slide Puzzle',higher:'Higher or Lower'};
-const tips={bubbles:'Pick the lucky bubble 10 times. The server checks each guess.',tictac:'You are X. Line up three marks against a clever computer.',memory:'Find all eight pairs in as few flips as you can.',sequence:'Watch the growing color pattern and repeat it in order.',lights:'Tap a square to toggle it and its up/down/left/right neighbors. Switch off all 16.',twenty:'Use arrow keys or swipe on the grid. Join matching values. Aim for 2048.',connect:'Connect four tokens in a row before the computer does.',recall:'Memorize five words, then select the ones you saw.',focus:'Find and tap numbers 1 through 16 in order.',code:'Discover the secret 3-digit code in six guesses. Digits can repeat.',slider:'Slide tiles into order from 1 to 8; leave the bottom-right square empty.',higher:'Guess whether the next number is higher or lower. Complete five rounds.'};
+const tips={bubbles:'Pick the lucky bubble 10 times. The server checks each guess.',tictac:'You are X. Line up three marks against a clever computer.',memory:'Find all eight pairs in as few flips as you can.',sequence:'Watch the growing color pattern and repeat it in order.',lights:'Tap a square to toggle it and its up/down/left/right neighbors. Switch off all 16.',twenty:'Each arrow moves EVERY tile in that direction. Matching tiles collide and merge. New tiles appear after a successful move. Aim for 2048.',connect:'Connect four tokens in a row before the computer does.',recall:'Memorize five words, then select the ones you saw.',focus:'Find and tap numbers 1 through 16 in order.',code:'Discover the secret 3-digit code in six guesses. Digits can repeat.',slider:'Slide tiles into order from 1 to 8; leave the bottom-right square empty.',higher:'Guess whether the next number is higher or lower. Complete five rounds.'};
 const today=()=>new Date().toLocaleDateString('en-CA');
 const storeKey='aqua_arcade_v2';
 let progress;try{progress=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{progress={}}
@@ -31,9 +31,92 @@ function memory(){let icons=['🌈','🧩','🍀','⭐','🐬','🎈','🚀','�
 function sequence(){status.textContent='Read the rules above first.';feedback.textContent='Ready when you are.';btn('Start pattern challenge',runSequence)}
 function runSequence(){controls.innerHTML='';let pattern=[],pos=0,accept=false,level=0;const colors=['🔴','🔵','🟢','🟡'],bs=makeBoard(colors,'sequence');function next(){if(game!=='sequence')return;accept=false;pos=0;pattern.push(rnd(4));level++;status.textContent='Level '+level+' / 5';feedback.textContent='Watch the pattern...';let token=run;bs.forEach(b=>b.disabled=true);pattern.forEach((n,i)=>{setTimeout(()=>{if(token!==run)return;bs[n].classList.add('on')},500+i*750);setTimeout(()=>{if(token!==run)return;bs[n].classList.remove('on');if(i===pattern.length-1){accept=true;bs.forEach(b=>b.disabled=false);feedback.textContent='Your turn: repeat '+pattern.length+' colors'}},900+i*750)})}bs.forEach((b,i)=>b.onclick=()=>{if(!accept)return;if(i!==pattern[pos]){accept=false;feedback.textContent='Not quite! Restart and try a new pattern.';btn('Try again',()=>open('sequence'));return}pos++;if(pos===pattern.length){accept=false;bs.forEach(x=>x.disabled=true);if(level>=5)win(20,'You remembered five levels!');else{feedback.textContent='Great memory!';setTimeout(()=>{if(game==='sequence'&&run===gameId)next()},800)}}});next()}
 function lights(){let cells=Array(16).fill(false);const adj=i=>[i,i-4,i+4,...(i%4?[i-1]:[]),...(i%4<3?[i+1]:[])].filter(j=>j>=0&&j<16);function toggle(i){adj(i).forEach(j=>cells[j]=!cells[j])}for(let k=0;k<8;k++)toggle(rnd(16));if(!cells.some(Boolean))toggle(5);let moves=0;const bs=makeBoard(Array(16).fill(''),'lights');function show(){bs.forEach((b,i)=>{b.textContent=cells[i]?'💡':'·';b.classList.toggle('on',cells[i]);b.disabled=finished});status.textContent='Moves: '+moves+' • Lights on: '+cells.filter(Boolean).length}bs.forEach((b,i)=>b.onclick=()=>{toggle(i);moves++;show();if(!cells.some(Boolean))win(Math.max(5,35-moves),'All lights switched off in '+moves+' moves!')});show()}
-function twenty(){let a=Array(16).fill(0),score=0,locked=false;const bs=makeBoard(a,'twenty');function spawn(){let empties=a.map((v,i)=>v?null:i).filter(v=>v!==null);if(empties.length)a[empties[rnd(empties.length)]]=Math.random()<.9?2:4}spawn();spawn();function show(){bs.forEach((b,i)=>{b.textContent=a[i]||'';b.dataset.number=a[i];b.disabled=true});status.textContent='Score: '+score+' • Best tile: '+Math.max(...a)}function process(line){let compact=line.filter(Boolean),out=[];for(let i=0;i<compact.length;i++){if(compact[i]===compact[i+1]){const n=compact[i]*2;out.push(n);score+=n;i++}else out.push(compact[i])}return [...out,...Array(4-out.length).fill(0)]}
-function move(dir){if(game!=='twenty'||finished||locked)return;let before=a.join();for(let r=0;r<4;r++){let ix=Array.from({length:4},(_,c)=>dir==='left'||dir==='right'?r*4+c:c*4+r);if(dir==='right'||dir==='down')ix.reverse();const values=process(ix.map(i=>a[i]));ix.forEach((i,j)=>a[i]=values[j])}if(a.join()!==before)spawn();show();if(a.includes(2048)){win(35,'You merged your way to 2048!');return}const can=a.includes(0)||a.some((v,i)=>i%4<3&&v===a[i+1]||i<12&&v===a[i+4]);if(!can){locked=true;feedback.textContent='No moves left. Final score: '+score;if(score>=256)win(10,'You reached 256+ points before the board filled!');else btn('Try again',()=>open('twenty'))} }
-btn('↑',()=>move('up'));btn('←',()=>move('left'));btn('↓',()=>move('down'));btn('→',()=>move('right'));const handler=e=>{if(game!=='twenty')return;let dir={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[e.key];if(dir){e.preventDefault();move(dir)}};document.addEventListener('keydown',handler,{signal:twentyController().signal});let touch=null;const touchController=twentyTouchController();board.addEventListener('touchstart',e=>{touch=[e.touches[0].clientX,e.touches[0].clientY]},{passive:true,signal:touchController.signal});board.addEventListener('touchend',e=>{if(!touch)return;let dx=e.changedTouches[0].clientX-touch[0],dy=e.changedTouches[0].clientY-touch[1];touch=null;if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'))},{passive:true,signal:touchController.signal});show()}
+function twenty(){
+ let a=Array(16).fill(0),score=0,locked=false,moves=0;
+ const bs=makeBoard(a,'twenty');
+ board.setAttribute('aria-label','2048 game board. Every arrow slides all tiles in that direction.');
+ const explanation=document.createElement('p');
+ explanation.id='mergeMoveExplanation';
+ explanation.style.cssText='font-weight:700;line-height:1.5;text-align:center;margin:10px auto;max-width:440px';
+ explanation.setAttribute('aria-live','polite');
+ explanation.textContent='Every arrow moves ALL tiles. Matching numbers that collide merge together.';
+ board.after(explanation);
+ function spawn(){
+  const empty=a.map((v,i)=>v?null:i).filter(i=>i!==null);
+  if(!empty.length)return -1;
+  const at=empty[rnd(empty.length)];
+  a[at]=Math.random()<.9?2:4;
+  return at;
+ }
+ spawn();spawn();
+ function show(changed=[],newTile=-1){
+  bs.forEach((b,i)=>{
+   b.textContent=a[i]||'';
+   b.dataset.number=a[i];
+   b.disabled=true;
+   b.title=a[i]?'Tile '+a[i]:'Empty tile';
+   b.style.outline=i===newTile?'3px solid #138c7b':changed.includes(i)?'2px solid #8a70db':'';
+   b.style.outlineOffset='-3px';
+  });
+  status.textContent='Score: '+score+' • Largest tile: '+Math.max(...a)+' • Moves: '+moves;
+ }
+ function process(line){
+  const values=line.filter(Boolean),out=[];
+  let merges=0;
+  for(let i=0;i<values.length;i++){
+   if(values[i]===values[i+1]){const combined=values[i]*2;out.push(combined);score+=combined;merges++;i++}
+   else out.push(values[i]);
+  }
+  return {values:[...out,...Array(4-out.length).fill(0)],merges};
+ }
+ function move(dir){
+  if(game!=='twenty'||finished||locked)return;
+  const before=[...a];let merged=0;
+  for(let r=0;r<4;r++){
+   const indices=Array.from({length:4},(_,c)=>dir==='left'||dir==='right'?r*4+c:c*4+r);
+   if(dir==='right'||dir==='down')indices.reverse();
+   const result=process(indices.map(i=>a[i]));
+   merged+=result.merges;
+   indices.forEach((i,j)=>a[i]=result.values[j]);
+  }
+  if(a.every((v,i)=>v===before[i])){
+   explanation.textContent='No tiles can move '+dir+'. Try another arrow. Every move affects the whole board.';
+   return;
+  }
+  moves++;
+  const moved=a.map((v,i)=>v!==before[i]?i:-1).filter(i=>i>=0);
+  const newTile=spawn();
+  show(moved,newTile);
+  const arrow={up:'↑',down:'↓',left:'←',right:'→'}[dir];
+  explanation.textContent='All tiles moved '+arrow+' '+dir+'. '+(merged?merged+' matching pair'+(merged>1?'s':'')+' merged! ':'')+'Purple outlines show changes; the green outline marks the NEW tile.';
+  if(a.includes(2048)){win(35,'You merged your way to 2048!');return}
+  const can=a.includes(0)||a.some((v,i)=>(i%4<3&&v===a[i+1])||(i<12&&v===a[i+4]));
+  if(!can){
+   locked=true;
+   feedback.textContent='No moves left. Final score: '+score;
+   if(score>=256)win(10,'You reached 256+ points before the board filled!');
+   else btn('Try again',()=>open('twenty'));
+  }
+ }
+ const controller=twentyController();
+ const touchController=twentyTouchController();
+ btn('↑ Move all tiles UP',()=>move('up'));
+ btn('← Move all tiles LEFT',()=>move('left'));
+ btn('↓ Move all tiles DOWN',()=>move('down'));
+ btn('→ Move all tiles RIGHT',()=>move('right'));
+ const handler=e=>{if(game!=='twenty')return;const dir={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[e.key];if(dir){e.preventDefault();move(dir)}};
+ document.addEventListener('keydown',handler,{signal:controller.signal});
+ let touch=null;
+ board.addEventListener('touchstart',e=>{touch=[e.touches[0].clientX,e.touches[0].clientY]},{passive:true,signal:touchController.signal});
+ board.addEventListener('touchend',e=>{
+  if(!touch)return;
+  const dx=e.changedTouches[0].clientX-touch[0],dy=e.changedTouches[0].clientY-touch[1];
+  touch=null;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;
+  move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));
+ },{passive:true,signal:touchController.signal});
+ show();
+}
 let touchHandlerController;function twentyTouchController(){if(touchHandlerController)touchHandlerController.abort();touchHandlerController=new AbortController();return touchHandlerController}
 let keyController;function twentyController(){if(keyController)keyController.abort();keyController=new AbortController();return keyController}
 save();home();
@@ -103,7 +186,7 @@ const gameHelp = {
   focus:{category:'Concentration',rules:'Find the numbers 1 through 16 scattered on the board. Tap them in ascending order.',win:'Tap every number in order, from 1 to 16.',reward:'Complete the sequence: 20 virtual stars.'},
   lights:{category:'Logic',rules:'Tap a square to switch that light plus the lights directly above, below, left, and right of it. Each tap flips their on/off states.',win:'Turn off all 16 lights.',reward:'Earn up to 34 virtual stars depending on moves, with a minimum of 5 stars. Fewer moves earn more.'},
   code:{category:'Logic',rules:'Guess a secret three-digit code using digits 0–4; digits may repeat. After each guess, see how many digits are exact and how many match but are in a different position.',win:'Crack the full code in six guesses or fewer.',reward:'Win: 23 stars for a first-try solve, decreasing by 2 stars per additional guess (13 stars at six). No stars if the code is not solved.'},
-  twenty:{category:'Planning',rules:'Swipe or use arrow buttons/keys to slide the numbered tiles. Matching adjacent tiles merge and increase your score.',win:'Create a tile worth 2048. A filled board ends the game if no move is possible.',reward:'Reach 2048: 35 virtual stars. If the board fills without a move, a score of 256 or more earns 10 stars.'},
+  twenty:{category:'Planning',rules:'Choose an arrow to move ALL tiles together in that direction. When matching numbers collide, they merge into a larger tile. One new tile appears after a valid move. Purple outlines mark changed squares and green marks the newly added tile.',win:'Create a tile worth 2048. A filled board ends the game if no move is possible.',reward:'Reach 2048: 35 virtual stars. If the board fills without a move, a score of 256 or more earns 10 stars.'},
   slider:{category:'Planning',rules:'Slide a numbered tile into the empty adjacent space. Rearrange the 3 × 3 board.',win:'Arrange the numbers from 1 to 8 in order, with the empty square at the bottom right.',reward:'Earn between 7 and 32 virtual stars depending on your move count. Fewer moves earn more.'},
   higher:{category:'Luck',rules:'You are shown a number from 1 to 10. Predict whether the next number is higher or lower. Repeat for five rounds. Equal numbers count as incorrect.',win:'Complete five predictions and try to maximize correct guesses.',reward:'Earn 5 virtual stars for completing the five rounds, plus 2 additional stars for each correct guess (5–15 stars total).'}
 };

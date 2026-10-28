@@ -1,29 +1,39 @@
-# Aquaemoticons Play & Win — prototype
+# Aquaemoticons Play & Win — Aqua Arcade (prototype)
 
-Standalone browser game with a server-authoritative 10-round guessing game and **demo-only** rewards. It does NOT create Shopify discounts or modify the live store.
+A browser-based mini-game arcade with six games, optional daily featured challenges, virtual stars, browser-local progress, and simulated rewards.
 
-## Run
+## Games
+1. Bubble Guess — server-validated 10-round lucky bubble guesses.
+2. Tic-Tac Tactics — play X against a minimax opponent.
+3. Memory Match — find eight shuffled icon pairs.
+4. Pattern Pulse — repeat increasingly long color sequences.
+5. Light Switch — Lights Out logic puzzle on a 4x4 board.
+6. Merge 2048 — combine matching tiles using arrow keys, screen buttons, or swipe gestures.
 
-Install Node.js 20 or newer, then run:
+## Return-play features
+- Rotating daily featured game, with a **one-time virtual 5-star bonus** upon completion.
+- Virtual stars awarded after completing puzzles, including bonus for efficiency where applicable.
+- Completed games and distinct days played.
+- Local progress in the browser (localStorage); no penalties for missed days, no pressure-based streak loss, no purchases, and no random paid rewards.
+- No customer accounts or cross-device syncing in this prototype.
 
+## Run locally
+Requires Node.js 20+; no dependencies.
 ```bash
 npm start
 ```
+Visit http://localhost:3000 and select a game.
 
-Open http://localhost:3000. No dependencies or secrets needed.
+## Shopify integration status
+The storefront at https://aquaemoticons.com has **not been modified**. The prototype does not generate real Shopify discount codes. Bubble Guess only *simulates* tiers of 5%, 10%, or 15% off, with a suggested minimum purchase of $25; these are not redeemable.
 
-## Reward tiers (prototype)
-- 0–3 correct: 5% demo reward
-- 4–6 correct: 10% demo reward
-- 7–10 correct: 15% demo reward
-- Intended minimum order: $25
+For real rewards later, build:
+1. Login / verified customer identity and accessible promotional terms.
+2. Server-authoritative completion records for all games (currently only Bubble Guess sends guesses to the server); other games and virtual stars are client-side and **must not be trusted** for real rewards.
+3. Persistent database, one claim per customer per qualifying period, bot defenses and rate limits.
+4. Secure Shopify Admin API token on the server only; create unique expiring customer-restricted codes with minimum purchase, use limits, and non-stacking rules.
+5. Test checkout and customer support flows before offering any real discount.
+6. Add the remaining original games when their source is available and deploy to a standalone HTTPS host (e.g. Vercel with appropriate Node hosting or a compatible Node server).
 
-## Shopify integration plan (not implemented)
-1. Deploy this app to a dedicated HTTPS host, e.g. play.aquaemoticons.com.
-2. Add a storefront navigation link to the game.
-3. Implement authenticated, single-use customer rewards backed by a durable database. Enforce weekly limits, replay and fraud protection.
-4. Add a server-side Shopify Admin API integration with minimum scopes and a securely stored token. Generate unique discount codes with customer eligibility, minimum purchase, expiration, one-use limit and non-stacking rules. Never expose Admin credentials in browser JavaScript.
-5. Add a claim flow, promotion terms, analytics, and test checkout end-to-end in nonproduction before enabling real codes.
-6. Replace the sample Bubble Guess game or add the earlier 15-game collection when its source is available.
-
-**Important:** This demo is not resistant to automated farming or repeated play. Do not activate live discounts without authentication, rate limits, persistent claim records, and fraud controls. Reward thresholds are suggestions, not a live offer. 
+## Notes
+This is a prototype, not a verified production deployment. The full six-game browser UI has been committed to the `aquaemoticons-play-win` development branch of the `vr85609-collab/freelance-business-solutions` repository in the `aqua-play-win/` folder. It is intentionally isolated from the repository's `main` branch.

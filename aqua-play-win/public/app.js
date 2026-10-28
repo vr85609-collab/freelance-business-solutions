@@ -86,3 +86,54 @@ function higher(){
  function draw(){status.textContent='Round '+turn+' / 5 • '+correct+' correct';feedback.textContent='Current number: '+current+' (1–10). What comes next?'}
  buttons.forEach((b,i)=>b.onclick=()=>{if(finished)return;const next=rnd(10)+1;const right=i===0?next>current:next<current;if(right)correct++;feedback.textContent='Next number was '+next+'. '+(right?'Correct!':'Not this time.');current=next;if(turn>=5){buttons.forEach(x=>x.disabled=true);win(5+correct*2,'You guessed '+correct+' of 5 correctly!')}else{turn++;status.textContent='Round '+turn+' / 5 • '+correct+' correct';setTimeout(()=>{if(game==='higher')draw()},650)}});draw()
 }
+
+
+/* Accessible, game-specific help: instructions, win conditions, and exact demo reward rules.
+   Real discounts are disabled. Stars are stored locally and have no monetary value. */
+const gameHelp = {
+  bubbles:{category:'Luck',rules:'Choose one of four bubbles in each of 10 rounds. The lucky bubble is selected by the game server and changes every round.',win:'Finish all 10 rounds. Each correct selection increases your score.',reward:'Earn 5 stars plus 1 star for each correct guess (5–15 stars total). You will also see a nonredeemable demo discount: 5% for 0–3 correct, 10% for 4–6, or 15% for 7–10. The example discount mentions a $25 minimum purchase.'},
+  tictac:{category:'Strategy',rules:'Play as X and take turns with the computer, which plays O. Tap any empty square.',win:'Get three X marks in a horizontal, vertical, or diagonal row before the computer.',reward:'Win: 15 virtual stars. A draw or loss does not award stars.'},
+  connect:{category:'Strategy',rules:'Choose a column to drop a blue token. The computer drops purple tokens. Tokens fall to the lowest open position.',win:'Connect four blue tokens horizontally, vertically, or diagonally before the computer.',reward:'Win: 20 virtual stars. Draws and losses do not award stars.'},
+  memory:{category:'Memory',rules:'Flip two covered cards at a time. Matching cards stay visible; unmatched cards flip back.',win:'Reveal all eight matching pairs.',reward:'Start at 25 virtual stars for a perfect eight-attempt finish, decreasing by one for each additional attempt to a minimum of 5 stars.'},
+  recall:{category:'Memory',rules:'Study five words shown for six seconds. When they disappear, choose the same five words from ten options.',win:'Select all five original words correctly.',reward:'Perfect recall: 18 virtual stars. An incorrect set does not award stars.'},
+  sequence:{category:'Concentration',rules:'Watch a sequence of colored buttons light up, then tap the colors in the same order. The sequence grows each round.',win:'Repeat all five levels correctly.',reward:'Complete level five: 20 virtual stars. A wrong sequence ends that attempt without stars.'},
+  focus:{category:'Concentration',rules:'Find the numbers 1 through 16 scattered on the board. Tap them in ascending order.',win:'Tap every number in order, from 1 to 16.',reward:'Complete the sequence: 20 virtual stars.'},
+  lights:{category:'Logic',rules:'Tap a square to switch that light plus the lights directly above, below, left, and right of it. Each tap flips their on/off states.',win:'Turn off all 16 lights.',reward:'Earn up to 34 virtual stars depending on moves, with a minimum of 5 stars. Fewer moves earn more.'},
+  code:{category:'Logic',rules:'Guess a secret three-digit code using digits 0–4; digits may repeat. After each guess, see how many digits are exact and how many match but are in a different position.',win:'Crack the full code in six guesses or fewer.',reward:'Win: 23 stars for a first-try solve, decreasing by 2 stars per additional guess (13 stars at six). No stars if the code is not solved.'},
+  twenty:{category:'Planning',rules:'Swipe or use arrow buttons/keys to slide the numbered tiles. Matching adjacent tiles merge and increase your score.',win:'Create a tile worth 2048. A filled board ends the game if no move is possible.',reward:'Reach 2048: 35 virtual stars. If the board fills without a move, a score of 256 or more earns 10 stars.'},
+  slider:{category:'Planning',rules:'Slide a numbered tile into the empty adjacent space. Rearrange the 3 × 3 board.',win:'Arrange the numbers from 1 to 8 in order, with the empty square at the bottom right.',reward:'Earn between 7 and 32 virtual stars depending on your move count. Fewer moves earn more.'},
+  higher:{category:'Luck',rules:'You are shown a number from 1 to 10. Predict whether the next number is higher or lower. Repeat for five rounds. Equal numbers count as incorrect.',win:'Complete five predictions and try to maximize correct guesses.',reward:'Earn 5 virtual stars for completing the five rounds, plus 2 additional stars for each correct guess (5–15 stars total).'}
+};
+let helpSelected = null;
+const helpDialog = $('#helpDialog');
+function showHelp(id){
+  const info=gameHelp[id];if(!info)return;
+  helpSelected=id;
+  $('#helpHeading').textContent=keys[id];
+  $('#helpCategory').textContent=info.category.toUpperCase()+' • GAME GUIDE';
+  $('#helpRules').textContent=info.rules;
+  $('#helpWin').textContent=info.win;
+  $('#helpReward').textContent=info.reward;
+  $('#helpNotice').textContent='Virtual stars have no cash value and are saved only in this browser. Completing today’s featured challenge for the first time also adds 5 bonus stars. All Shopify discounts are DEMOS and cannot be redeemed.';
+  $('#helpPlay').textContent=game===id?'Continue playing':'Play '+keys[id];
+  if(!helpDialog.open)helpDialog.showModal();
+}
+function closeHelp(){if(helpDialog.open)helpDialog.close()}
+$('#helpClose').onclick=closeHelp;
+$('#helpDone').onclick=closeHelp;
+helpDialog.addEventListener('click',e=>{if(e.target===helpDialog)closeHelp()});
+$('#helpPlay').onclick=()=>{const id=helpSelected;closeHelp();if(id&&game!==id)open(id)};
+$('#gameInfo').onclick=()=>{if(game)showHelp(game)};
+document.querySelectorAll('#catalog .tile[data-game]').forEach(tile=>{
+  const holder=document.createElement('div');
+  holder.className='tilewrap';
+  tile.parentNode.insertBefore(holder,tile);
+  holder.appendChild(tile);
+  const b=document.createElement('button');
+  b.type='button';
+  b.className='tile-info';
+  b.textContent='ⓘ Info';
+  b.setAttribute('aria-label','How to play '+keys[tile.dataset.game]+' and rewards');
+  b.onclick=()=>showHelp(tile.dataset.game);
+  holder.appendChild(b);
+});

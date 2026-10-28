@@ -25,6 +25,18 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='GET'&&url.pathname==='/api/config')return json(res,200,{shop:'https://aquaemoticons.com',realDiscountsEnabled:false,minimumPurchase:25});
  if(req.method==='GET'&&(url.pathname==='/'||url.pathname==='/index.html')){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, must-revalidate','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'"});res.end(await readFile(new URL('./public/index.html',import.meta.url)));return}
  if(req.method==='GET'&&url.pathname==='/theme.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/theme.js',import.meta.url)));return}
+ const offlineAssets={
+  '/sw.js':['./public/sw.js','text/javascript; charset=utf-8'],
+  '/offline.js':['./public/offline.js','text/javascript; charset=utf-8'],
+  '/manifest.webmanifest':['./public/manifest.webmanifest','application/manifest+json'],
+  '/icon.svg':['./public/icon.svg','image/svg+xml']
+ };
+ if(req.method==='GET'&&offlineAssets[url.pathname]){
+  const [filepath,mime]=offlineAssets[url.pathname];
+  res.writeHead(200,{'Content-Type':mime,'Cache-Control':url.pathname==='/sw.js'?'no-cache':'no-store, must-revalidate'});
+  res.end(await readFile(new URL(filepath,import.meta.url)));return;
+ }
+ if(req.method==='GET'&&url.pathname==='/api/rewards/status')return json(res,200,{enabled:false,claimingEnabled:false,shop:'aquaemoticons.com',minimumPurchaseUSD:25,maxRewardPercent:15,weeklyClaimsPerCustomer:1,verification:'not yet available',reason:'Customer identity, persistent claim records and a server-side Shopify credential are needed before issuing real discount codes.'});
  if(req.method==='GET'&&url.pathname==='/app.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/app.js',import.meta.url)));return}
  json(res,404,{error:'Not found'});
  }catch(e){json(res,400,{error:e.message||'Invalid request'})}

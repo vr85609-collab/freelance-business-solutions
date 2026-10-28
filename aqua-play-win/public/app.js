@@ -120,16 +120,16 @@ const visualExamples={
   {cols:3,board:['X','O','·','·','X','O','·','·','X'],highlight:[0,4,8],caption:'Step 2: Three X marks diagonally wins!'}
  ],
  connect:[
-  {cols:4,board:['⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','🟣','⚪','⚪','🔵','🔵','🔵','⚪'],mark:[15],caption:'Step 1: Drop your blue token into a column.'},
+  {cols:4,board:['⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','🟣','⚪','⚪','🔵','🔵','🔵','⚪'],mark:[15],caption:'Step 1: Drop a blue token into a column (zoomed-in example; actual board has 7 columns and 6 rows).'},
   {cols:4,board:['⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','🟣','⚪','⚪','🔵','🔵','🔵','🔵'],highlight:[12,13,14,15],caption:'Step 2: Connect four blue tokens in any direction to win.'}
  ],
  memory:[
-  {cols:4,board:['❔','❔','❔','❔','❔','❔','❔','❔'],mark:[0,1],caption:'Step 1: Flip two cards to see what is underneath.'},
+  {cols:4,board:['❔','❔','❔','❔','❔','❔','❔','❔'],mark:[0,1],caption:'Step 1: Flip two cards at a time. This is a small example; the actual game has 16 cards.'},
   {cols:4,board:['🐬','🐬','❔','❔','❔','❔','❔','❔'],highlight:[0,1],caption:'Step 2: Matching pairs stay face up. Find all eight pairs.'}
  ],
  recall:[
-  {cols:3,board:['🍎','🚀','🌊','🌳','⭐','🎹'],highlight:[0,1,2,3,4,5],caption:'Step 1: Memorize the displayed items (the real game uses five words).'},
-  {cols:3,board:['🍎','🚀','🌊','🐱','⭐','🌳'],mark:[0,1,2,4,5],caption:'Step 2: Select the five original words from the choices.'}
+  {cols:3,board:['river','piano','ocean','forest','star','candle'],highlight:[0,1,2,3,4,5],caption:'Step 1: Read and remember the words shown for six seconds (five words in the actual game).'},
+  {cols:3,board:['river','piano','ocean','cat','star','forest'],mark:[0,1,2,4,5],caption:'Step 2: Choose the same five words from ten choices. Incorrect picks end the attempt.'}
  ],
  sequence:[
   {cols:2,board:['🔴','🔵','🟢','🟡'],highlight:[0],caption:'Step 1: Watch which colored button lights up first.'},

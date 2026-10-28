@@ -1,5 +1,5 @@
-const CACHE='aqua-arcade-offline-v1';
-const ASSETS=['/','/index.html','/app.js','/theme.js','/manifest.webmanifest','/icon.svg'];
+const CACHE='aqua-arcade-offline-v2';
+const ASSETS=['/','/index.html','/app.js','/theme.js','/language.js','/offline.js','/manifest.webmanifest','/icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });

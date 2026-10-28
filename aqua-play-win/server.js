@@ -36,7 +36,8 @@ const server=http.createServer(async(req,res)=>{
   res.writeHead(200,{'Content-Type':mime,'Cache-Control':url.pathname==='/sw.js'?'no-cache':'no-store, must-revalidate'});
   res.end(await readFile(new URL(filepath,import.meta.url)));return;
  }
- if(req.method==='GET'&&url.pathname==='/api/rewards/status')return json(res,200,{enabled:false,claimingEnabled:false,shop:'aquaemoticons.com',minimumPurchaseUSD:25,maxRewardPercent:15,weeklyClaimsPerCustomer:1,verification:'not yet available',reason:'Customer identity, persistent claim records and a server-side Shopify credential are needed before issuing real discount codes.'});
+ if(req.method==='GET'&&url.pathname==='/api/rewards/status')return json(res,200,{enabled:false,claimingEnabled:false,shop:'aquaemoticons.com',audience:'all verified Shopify customers',launch:'immediately after verification and security tests pass',minimumPurchaseUSD:25,discountTiers:[5,10,15],weeklyClaimsPerCustomer:1,codeUses:1,codeExpiryHours:72,combineWithOtherDiscounts:false,offlineScoresEligible:false,identityVerificationReady:false,persistentClaimsReady:false,shopifyApiReady:false,reason:'Customer identity, durable one-per-week claim records, and a secure server-side Shopify integration are not yet configured.'});
+ if(req.method==='POST'&&url.pathname==='/api/rewards/claim')return json(res,503,{error:'Redemption not yet enabled. No code has been issued.',enabled:false});
  if(req.method==='GET'&&url.pathname==='/app.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/app.js',import.meta.url)));return}
  json(res,404,{error:'Not found'});
  }catch(e){json(res,400,{error:e.message||'Invalid request'})}

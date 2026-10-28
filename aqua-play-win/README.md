@@ -1,6 +1,6 @@
 # Aquaemoticons Play & Win — Aqua Arcade (prototype)
 
-A browser-based mini-game arcade with twelve games, optional daily featured challenges, virtual stars, browser-local progress, and simulated rewards.
+An installable, offline-capable browser mini-game arcade with twelve games, optional daily featured challenges, virtual stars, browser-local progress, and simulated rewards.
 
 ## Games — two choices in each category
 | Category | Option 1 | Option 2 |
@@ -20,6 +20,27 @@ A browser-based mini-game arcade with twelve games, optional daily featured chal
 - Completed games and distinct days played.
 - Local progress in the browser (localStorage); no penalties for missed days, no pressure-based streak loss, no purchases, and no random paid rewards.
 - No customer accounts or cross-device syncing in this prototype.
+
+## Offline play / install on phone
+1. Visit https://aquaemoticons-play-win.onrender.com once while online, allow all game files to load, and stay on the site until the service worker has installed.
+2. On Android Chrome, use the Install app option (browser menu or in-page button when available).
+3. On iPhone Safari, use Share → Add to Home Screen, then open the saved app at least once while online.
+4. Turn on airplane mode and reopen the installed Aqua Arcade. The game UI and all 12 games are designed to run offline.
+5. Virtual stars and scores remain on this device. **Offline scores and offline practice are not trusted for discounts and will not be automatically converted into coupons on reconnect.**
+6. If offline reopening fails on the first try, reconnect once, reopen the app online, then repeat. Browser storage can be cleared by the OS or by the user, so offline files are not guaranteed forever.
+
+Offline limitations: Shopify's storefront and checkout, customer sign-in, verification, and redemption always require internet. The arcade cannot create live Shopify discount codes offline. Bubble Guess falls back to a clearly labeled offline practice session when the server is unreachable. On a mid-session disconnect, it starts a fresh local round and does not carry over server results.
+
+## Real discount integration — NOT ACTIVE
+Proposed policy: 5/10/15 percent tiers; $25 minimum order; one claim per verified Shopify customer each calendar week; unique one-use codes; time-limited codes; no discount stacking. These are proposals and no Shopify codes have been created.
+
+Do **not** issue live discounts from client-only stars, offline scores or localStorage. Before launch:
+- Establish Shopify customer authentication and a trusted server-side game completion record.
+- Add a persistent store (for example Postgres) with unique customer-week claim constraints and completed session identifiers; Render service memory is not durable.
+- Set up securely managed Shopify Admin API credentials on the server. Never place tokens in frontend JavaScript, GitHub, or service worker caches.
+- Call Shopify's discount API only after verifying identity, eligibility, replay protections, weekly limits and concurrent claim handling; enforce validity window, minimum purchase, one-time use and non-combination.
+- Log claims minimally and test checkout and cancellations. Use email/marketing consent separately; winning a game must not opt anyone into advertising.
+- The `GET /api/rewards/status` endpoint makes the disabled state clear; no redemption API is enabled.
 
 ## Run locally
 Requires Node.js 20+; no dependencies.

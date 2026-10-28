@@ -1,0 +1,49 @@
+{
+  "program": "Aqua Arcade Play & Win",
+  "shopDomain": "aquaemoticons.com",
+  "status": "disabled_pending_security_verification",
+  "launch": {
+    "mode": "immediately_after_all_security_checks_pass",
+    "audience": "all_verified_shopify_customers",
+    "enabled": false
+  },
+  "rules": {
+    "discountTiers": [
+      {
+        "correctGuessesMin": 0,
+        "correctGuessesMax": 3,
+        "percent": 5
+      },
+      {
+        "correctGuessesMin": 4,
+        "correctGuessesMax": 6,
+        "percent": 10
+      },
+      {
+        "correctGuessesMin": 7,
+        "correctGuessesMax": 10,
+        "percent": 15
+      }
+    ],
+    "minimumPurchaseUSD": 25,
+    "maxClaimsPerCustomerPerWeek": 1,
+    "weekBoundary": "America/Chicago calendar week starting Monday",
+    "singleUseCode": true,
+    "combinesWithOtherDiscounts": false,
+    "expireAfterHours": 72
+  },
+  "offline": {
+    "playAllowed": true,
+    "redemptionAllowed": false,
+    "offlineStarsQualify": false
+  },
+  "security": {
+    "shopifyCustomerVerificationRequired": true,
+    "serverValidatedGameRequired": true,
+    "persistentDatabaseRequired": true,
+    "atomicClaimConstraintsRequired": true,
+    "claimRateLimitingRequired": true,
+    "shopifyAdminCredentialsRequired": true,
+    "checkoutTestingRequired": true
+  }
+}

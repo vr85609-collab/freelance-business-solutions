@@ -69,6 +69,51 @@ const patterns=[
 [/^You found /,'Encontraste '],
 [/^Challenge complete!$/,'¡Reto completado!']
 ];
+const gameplayPhrases=[
+ ['You outsmarted the computer!','¡Superaste a la computadora!'],
+ ['Four in a row!','¡Cuatro en línea!'],
+ ['All eight pairs found in ','Encontraste las ocho parejas en '],
+ [' attempts!',' intentos!'],
+ ['You remembered five levels!','¡Recordaste los cinco niveles!'],
+ ['All lights switched off in ','Apagaste todas las luces en '],
+ [' moves!',' movimientos!'],
+ ['You merged your way to 2048!','¡Llegaste a 2048 combinando fichas!'],
+ ['Great planning!','¡Excelente planificación!'],
+ ['Great memory!','¡Excelente memoria!'],
+ ['Perfect word recall!','¡Recordaste todas las palabras!'],
+ ['All numbers found in order!','¡Encontraste todos los números en orden!'],
+ ['Code cracked in ','Código descifrado en '],
+ [' guesses!',' intentos!'],
+ ['Tiles solved in ','Ordenaste las fichas en '],
+ [' moves!',' movimientos!'],
+ ['You guessed ','Adivinaste '],
+ [' out of 5 correctly!',' de 5 correctamente!'],
+ ['You found ','Encontraste '],
+ [' lucky bubbles.',' burbujas de la suerte.'],
+ ['All tiles moved ','Todas las fichas se movieron '],
+ [' matching pair',' pareja igual'],
+ ['s merged!','s se combinaron!'],
+ ['Purple outlines show changes; the green outline marks the NEW tile.','Los bordes morados muestran los cambios; el verde marca la ficha NUEVA.'],
+ ['Offline practice: guesses and virtual stars stay on this device. No real rewards.','Práctica sin conexión: los intentos y estrellas se guardan en este dispositivo. Sin premios reales.'],
+ ['Connection lost. Started a NEW offline practice round. Previous server guesses are not transferable.','Se perdió la conexión. Comenzó una nueva ronda sin internet. Los intentos anteriores no se transfieren.'],
+ ['Not quite (ties count as incorrect).','No acertaste (los empates cuentan como error).'],
+ ['✓ Good guess!','✓ ¡Buen intento!'],
+ ['Choose a number from 1 to 4.','Elige un número del 1 al 4.'],
+ ['Choose the same five words from ten choices.','Elige las mismas cinco palabras entre diez opciones.'],
+ ['Final score: ','Puntuación final: '],
+ ['You reached 256+ points before the board filled!','¡Alcanzaste al menos 256 puntos antes de llenar el tablero!'],
+ ['Wrong sequence','Secuencia incorrecta'],
+ ['5 bonus stars','5 estrellas extra'],
+ ['Daily challenge bonus: 5 stars!','¡Bono diario de 5 estrellas!'],
+ ['Not a Shopify coupon or redeemable prize.','No es un cupón de Shopify ni un premio canjeable.'],
+ ['NOT a Shopify coupon or redeemable prize.','NO es un cupón de Shopify ni un premio canjeable.'],
+ ['No moves left.','No quedan movimientos.'],
+ ['Try another arrow. Every move affects the whole board.','Prueba otra flecha. Cada movimiento afecta a todo el tablero.'],
+ ['↑ HIGHER','↑ MAYOR'],['↓ LOWER','↓ MENOR'],
+ [' correct',' aciertos'],[' of 5 words.',' de 5 palabras.'],
+ ['✅','✅'],
+ ['🫧 1','🫧 1']
+];
 const words=[
 [' • Offline practice',' • Práctica sin conexión'],[' • No redeemable discounts',' • Sin descuentos canjeables'],[' • Best tile: ',' • Ficha mayor: '],[' • Largest tile: ',' • Ficha mayor: '],[' • Score: ',' • Puntuación: '],[' • Moves: ',' • Movimientos: '],[' • Attempts: ',' • Intentos: '],[' • Lights on: ',' • Luces encendidas: '],[' correct',' correctos'],[' matched',' acertados'],[' guesses',' intentos'],[' stars',' estrellas'],[' stars!',' estrellas!'],[' attempts',' intentos'],[' levels',' niveles'],[' matching pairs',' parejas iguales'],[' correct!',' acertados!'],[' minimum purchase',' compra mínima'],['Not a redeemable code.','No es un código canjeable.'],['No Shopify coupon or redeemable prize.','Sin cupón de Shopify ni premio canjeable.'],['New today','Nuevo hoy'],['Try daily challenge','Probar reto diario'],['No penalty for missing a day.','No hay penalización por faltar.'],['You can replay whenever you want.','Puedes volver a jugar cuando quieras.'],['✓ Completed today','✓ Completado hoy'],['You can replay','Puedes repetirlo'],['Demo','Demostración'],['correctly','correctamente'],[' right digit/wrong place',' dígito correcto en otra posición'],[' exact',' exactos'],['HIGHER','MAYOR'],['LOWER','MENOR'],['UP','ARRIBA'],['DOWN','ABAJO'],['LEFT','IZQUIERDA'],['RIGHT','DERECHA']
 ];
@@ -92,6 +137,7 @@ function translated(en){
  if(map.has(trimmed))return en.replace(trimmed,map.get(trimmed));
  let s=en;
  for(const [a,b] of patterns)s=s.replace(a,b);
+ for(const [a,b] of gameplayPhrases)s=s.replaceAll(a,b);
  for(const [a,b] of words)s=s.replaceAll(a,b);
  return s;
 }

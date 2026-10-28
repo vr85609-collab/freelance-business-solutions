@@ -21,7 +21,56 @@ function open(name,asDaily=false){gameId++;run=gameId;game=name;dailyMode=asDail
 document.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>open(el.dataset.game));
 $('#back').onclick=home;$('#dailyStart').onclick=()=>open(dailyGame(),true);$('#dailyButton').onclick=()=>open(dailyGame(),true);
 async function api(path,obj){let r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});let v=await r.json();if(!r.ok)throw Error(v.error||'Request failed');return v}
-async function bubbles(){board.classList.add('bubbles');status.textContent='Starting game...';try{let session=await api('/api/start',{});if(game!=='bubbles')return;let id=session.id;let round=1,wins=0,locked=false;const bs=makeBoard(['🫧 1','🫧 2','🫧 3','🫧 4'],'bubbles');status.textContent='Round 1 / 10';bs.forEach((b,i)=>b.onclick=async()=>{if(locked||finished)return;locked=true;bs.forEach(x=>x.disabled=true);try{let v=await api('/api/guess',{id,guess:i+1});if(game!=='bubbles')return;wins=v.wins;feedback.textContent=v.correct?'✨ Correct!':'💦 Not this time';if(v.finished){status.textContent='Final result: '+wins+'/10';bs.forEach(x=>x.disabled=true);let reward=$('#winMessage');reward.classList.remove('hidden');reward.textContent='Demo discount: '+v.reward.percent+'% off (minimum $25). Not a redeemable code.';win(5+wins,'You found '+wins+' lucky bubbles!')}else{round=v.round;status.textContent='Round '+round+' / 10 • '+wins+' correct';bs.forEach(x=>x.disabled=false)}}catch(e){feedback.textContent=e.message;bs.forEach(x=>x.disabled=false)}finally{locked=false}})}catch(e){feedback.textContent='Could not connect to game server: '+e.message;btn('Retry',()=>open('bubbles'))}}
+async function bubbles(){
+ board.classList.add('bubbles');
+ status.textContent='Starting Bubble Guess…';
+ const sessionToken=run;
+ let offlinePractice=!navigator.onLine,remoteId=null,round=1,wins=0,locked=false,localSecret=rnd(4)+1;
+ if(!offlinePractice){
+  try{const session=await api('/api/start',{});if(sessionToken!==run)return;remoteId=session.id}
+  catch(e){offlinePractice=true}
+ }
+ if(sessionToken!==run)return;
+ const tiles=makeBoard(['🫧 1','🫧 2','🫧 3','🫧 4'],'bubbles');
+ const renderStatus=()=>{status.textContent='Round '+round+' / 10 • '+wins+' correct'+(offlinePractice?' • Offline practice':'')};
+ renderStatus();
+ feedback.textContent=offlinePractice?'Offline practice: guesses and virtual stars stay on this device. No real rewards.':'Select your lucky bubble!';
+ tiles.forEach((tile,i)=>tile.onclick=async()=>{
+  if(locked||finished||sessionToken!==run)return;
+  locked=true;tiles.forEach(x=>x.disabled=true);
+  let result;
+  try{
+   if(!offlinePractice){
+    result=await api('/api/guess',{id:remoteId,guess:i+1});
+    if(sessionToken!==run)return;
+   }else{
+    const correct=(i+1)===localSecret;
+    wins+=Number(correct);
+    result={correct,wins,finished:round===10,round:round+1};
+    localSecret=rnd(4)+1;
+   }
+  }catch(e){
+   if(sessionToken!==run)return;
+   offlinePractice=true;remoteId=null;round=1;wins=0;localSecret=rnd(4)+1;
+   renderStatus();feedback.textContent='Connection lost. Started a NEW offline practice round. Previous server guesses are not transferable.';
+   locked=false;tiles.forEach(x=>x.disabled=false);return;
+  }
+  if(sessionToken!==run)return;
+  wins=result.wins;
+  feedback.textContent=result.correct?'✨ Correct!':'💦 Not this time';
+  if(result.finished){
+   status.textContent='Final score: '+wins+'/10'+(offlinePractice?' • Offline practice':'');
+   const percentage=wins>=7?15:wins>=4?10:5;
+   const reward=$('#winMessage');reward.classList.remove('hidden');
+   reward.textContent=(offlinePractice?'Offline practice · ':'')+'Illustrative '+percentage+'% discount (minimum $25). NOT a Shopify coupon or redeemable prize.';
+   win(5+wins,'You guessed '+wins+' lucky bubbles.');
+   tiles.forEach(x=>x.disabled=true);
+  }else{
+   round=result.round;renderStatus();tiles.forEach(x=>x.disabled=false);
+  }
+  locked=false;
+ });
+}
 function tictac(){let a=Array(9).fill(''),over=false;const bs=makeBoard(a,'tictac');function winner(p){const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];return lines.some(l=>l.every(i=>p[i]==='X'))?'X':lines.some(l=>l.every(i=>p[i]==='O'))?'O':p.every(Boolean)?'tie':null}
 function minimax(p,turn,depth=0){const w=winner(p);if(w)return {score:w==='O'?10-depth:w==='X'?depth-10:0};let best={score:turn==='O'?-Infinity:Infinity,index:-1};for(let i=0;i<9;i++)if(!p[i]){p[i]=turn;const score=minimax(p,turn==='O'?'X':'O',depth+1).score;p[i]='';if(turn==='O'?score>best.score:score<best.score)best={score,index:i}}return best}
 function refresh(){bs.forEach((b,i)=>{b.textContent=a[i]||'·';b.disabled=!!a[i]||over})}

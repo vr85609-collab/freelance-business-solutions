@@ -214,23 +214,3 @@ document.querySelectorAll('#catalog .tile[data-game]').forEach(tile=>{
   holder.appendChild(b);
 });
 
-/* Appearance preference persists across visits. Defaults to device appearance. */
-const themeButton=document.querySelector('#themeToggle');
-const themeKey='aqua_arcade_theme';
-const deviceTheme=window.matchMedia('(prefers-color-scheme: dark)');
-let explicitTheme=null;
-try { const saved=localStorage.getItem(themeKey);if(saved==='light'||saved==='dark')explicitTheme=saved; }catch{}
-function applyTheme(mode){
- document.documentElement.dataset.theme=mode;
- themeButton.textContent=mode==='dark'?'☀️ Light mode':'🌙 Dark mode';
- themeButton.setAttribute('aria-label',mode==='dark'?'Switch to light mode':'Switch to dark mode');
- themeButton.setAttribute('aria-pressed',String(mode==='dark'));
-}
-applyTheme(explicitTheme||(deviceTheme.matches?'dark':'light'));
-themeButton.addEventListener('click',()=>{
- const mode=document.documentElement.dataset.theme==='dark'?'light':'dark';
- explicitTheme=mode;
- try{localStorage.setItem(themeKey,mode)}catch{}
- applyTheme(mode);
-});
-deviceTheme.addEventListener?.('change',event=>{if(!explicitTheme)applyTheme(event.matches?'dark':'light')});

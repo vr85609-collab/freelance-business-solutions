@@ -189,7 +189,7 @@ function connect(){
 }
 function recall(){status.textContent='Read the rules above first.';feedback.textContent='You will have six seconds to memorize five words.';btn('Show the five words',runRecall)}
 function runRecall(){controls.innerHTML='';
- const pool=['river','piano','orange','garden','rocket','tiger','cloud','window','planet','forest','candle','bridge','castle','bottle','ocean','puzzle','silver','coffee','island','flower'];
+ const pool=window.AquaLanguage?.language==='es'?['río','piano','naranja','jardín','cohete','tigre','nube','ventana','planeta','bosque','vela','puente','castillo','botella','océano','acertijo','plata','café','isla','flor']:['river','piano','orange','garden','rocket','tiger','cloud','window','planet','forest','candle','bridge','castle','bottle','ocean','puzzle','silver','coffee','island','flower'];
  const chosen=shuffle(pool).slice(0,5),options=shuffle([...chosen,...shuffle(pool.filter(x=>!chosen.includes(x))).slice(0,5)]);
  const token=run;status.textContent='Memorize these five words:';board.className='board';board.innerHTML='';
  const display=document.createElement('h2');display.style.textAlign='center';display.textContent=chosen.join(' · ');board.appendChild(display);

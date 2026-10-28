@@ -104,11 +104,87 @@ const gameHelp = {
   slider:{category:'Planning',rules:'Slide a numbered tile into the empty adjacent space. Rearrange the 3 × 3 board.',win:'Arrange the numbers from 1 to 8 in order, with the empty square at the bottom right.',reward:'Earn between 7 and 32 virtual stars depending on your move count. Fewer moves earn more.'},
   higher:{category:'Luck',rules:'You are shown a number from 1 to 10. Predict whether the next number is higher or lower. Repeat for five rounds. Equal numbers count as incorrect.',win:'Complete five predictions and try to maximize correct guesses.',reward:'Earn 5 virtual stars for completing the five rounds, plus 2 additional stars for each correct guess (5–15 stars total).'}
 };
+
+/* Illustrated game-specific tutorials: two example frames per game. These
+ * diagrams are demonstrations only, not live game outcomes or real rewards. */
+const visualExamples={
+ bubbles:[
+  {cols:4,board:['🫧','🫧','🫧','🫧'],mark:[2],caption:'Step 1: Choose one of four bubbles.'},
+  {cols:4,board:['🫧','🫧','✨','🫧'],highlight:[2],caption:'Step 2: A lucky pick earns a point. Play 10 rounds.'}
+ ],
+ tictac:[
+  {cols:3,board:['X','O','·','·','X','O','·','·','·'],mark:[8],caption:'Step 1: You place X; the computer places O. Try to make a line.'},
+  {cols:3,board:['X','O','·','·','X','O','·','·','X'],highlight:[0,4,8],caption:'Step 2: Three X marks diagonally wins!'}
+ ],
+ connect:[
+  {cols:4,board:['⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','🟣','⚪','⚪','🔵','🔵','🔵','⚪'],mark:[15],caption:'Step 1: Drop your blue token into a column.'},
+  {cols:4,board:['⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','⚪','🟣','⚪','⚪','🔵','🔵','🔵','🔵'],highlight:[12,13,14,15],caption:'Step 2: Connect four blue tokens in any direction to win.'}
+ ],
+ memory:[
+  {cols:4,board:['❔','❔','❔','❔','❔','❔','❔','❔'],mark:[0,1],caption:'Step 1: Flip two cards to see what is underneath.'},
+  {cols:4,board:['🐬','🐬','❔','❔','❔','❔','❔','❔'],highlight:[0,1],caption:'Step 2: Matching pairs stay face up. Find all eight pairs.'}
+ ],
+ recall:[
+  {cols:3,board:['🍎','🚀','🌊','🌳','⭐','🎹'],highlight:[0,1,2,3,4,5],caption:'Step 1: Memorize the displayed items (the real game uses five words).'},
+  {cols:3,board:['🍎','🚀','🌊','🐱','⭐','🌳'],mark:[0,1,2,4,5],caption:'Step 2: Select the five original words from the choices.'}
+ ],
+ sequence:[
+  {cols:2,board:['🔴','🔵','🟢','🟡'],highlight:[0],caption:'Step 1: Watch which colored button lights up first.'},
+  {cols:2,board:['① 🔴','② 🔵','③ 🟢','🟡'],mark:[0,1,2],caption:'Step 2: Tap the colors in that same order. Each level gets longer.'}
+ ],
+ focus:[
+  {cols:4,board:['8','2','15','11','13','1','7','4','10','16','5','3','9','12','14','6'],mark:[5],caption:'Step 1: Find the number 1 among the mixed-up tiles.'},
+  {cols:4,board:['8','2','15','11','13','✓','7','4','10','16','5','3','9','12','14','6'],highlight:[5,1],caption:'Step 2: Tap 1, then 2, and keep going until 16.'}
+ ],
+ lights:[
+  {cols:4,board:['💡','·','·','·','💡','💡','·','·','·','💡','·','·','·','·','·','·'],mark:[5],caption:'Step 1: Tap a square to change its light and nearby lights.'},
+  {cols:4,board:['💡','💡','·','·','·','·','💡','·','·','·','·','·','·','·','·','·'],highlight:[1,4,5,6,9],caption:'Step 2: Each tap flips a cross-shaped group. Turn every light off.'}
+ ],
+ code:[
+  {cols:3,board:['1','2','3'],mark:[0,1,2],caption:'Step 1: Enter a three-digit guess using digits 0–4.'},
+  {cols:3,board:['1','2','4'],highlight:[0,1],caption:'Step 2: Clues tell you exact digits and misplaced digits. Solve in six guesses.'}
+ ],
+ twenty:[
+  {cols:4,board:['2','2','·','·','·','4','·','·','·','·','·','·','·','·','·','·'],mark:[0,1],caption:'Step 1: Swipe or use arrow buttons to move all tiles together.'},
+  {cols:4,board:['4','·','·','·','·','4','·','·','·','·','·','·','·','·','·','·'],highlight:[0],caption:'Step 2: Two equal tiles combine. Keep merging until you reach 2048.'}
+ ],
+ slider:[
+  {cols:3,board:['1','2','3','4','·','6','7','5','8'],mark:[7],caption:'Step 1: Tap a numbered tile next to the empty space.'},
+  {cols:3,board:['1','2','3','4','5','6','7','·','8'],highlight:[4,7],caption:'Step 2: Slide tiles into number order with the empty space last.'}
+ ],
+ higher:[
+  {cols:3,board:['?','5','?'],mark:[0,2],caption:'Step 1: You see the current number, 5. Predict higher or lower.'},
+  {cols:3,board:['⬆️','8','✓'],highlight:[1,2],caption:'Step 2: The new number is 8, so HIGHER was correct. Try five rounds.'}
+ ]
+};
+let visualIndex=0;
+function renderVisual(){
+ const steps=visualExamples[helpSelected]||[];
+ if(!steps.length)return;
+ const current=steps[visualIndex],canvas=$('#visualBoard');
+ canvas.replaceChildren();
+ canvas.style.gridTemplateColumns='repeat('+current.cols+',minmax(0,1fr))';
+ current.board.forEach((value,i)=>{
+  const cell=document.createElement('div');
+  cell.className='visual-cell'+((current.highlight||[]).includes(i)?' highlight':'')+((current.mark||[]).includes(i)?' action-step':'');
+  cell.textContent=value;
+  canvas.appendChild(cell);
+ });
+ $('#visualCaption').textContent=current.caption;
+ $('#visualStep').textContent='Step '+(visualIndex+1)+' of '+steps.length;
+ $('#visualPrev').disabled=visualIndex===0;
+ $('#visualNext').disabled=visualIndex===steps.length-1;
+}
+$('#visualPrev').onclick=()=>{visualIndex=Math.max(0,visualIndex-1);renderVisual()};
+$('#visualNext').onclick=()=>{visualIndex=Math.min((visualExamples[helpSelected]||[]).length-1,visualIndex+1);renderVisual()};
+
 let helpSelected = null;
 const helpDialog = $('#helpDialog');
 function showHelp(id){
   const info=gameHelp[id];if(!info)return;
   helpSelected=id;
+  visualIndex=0;
+  renderVisual();
   $('#helpHeading').textContent=keys[id];
   $('#helpCategory').textContent=info.category.toUpperCase()+' • GAME GUIDE';
   $('#helpRules').textContent=info.rules;

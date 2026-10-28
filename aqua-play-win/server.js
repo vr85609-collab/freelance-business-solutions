@@ -28,6 +28,7 @@ const server=http.createServer(async(req,res)=>{
  const offlineAssets={
   '/sw.js':['./public/sw.js','text/javascript; charset=utf-8'],
   '/offline.js':['./public/offline.js','text/javascript; charset=utf-8'],
+  '/language.js':['./public/language.js','text/javascript; charset=utf-8'],
   '/manifest.webmanifest':['./public/manifest.webmanifest','application/manifest+json'],
   '/icon.svg':['./public/icon.svg','image/svg+xml']
  };

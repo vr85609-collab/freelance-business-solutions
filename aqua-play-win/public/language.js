@@ -72,6 +72,20 @@ const patterns=[
 const words=[
 [' • Offline practice',' • Práctica sin conexión'],[' • No redeemable discounts',' • Sin descuentos canjeables'],[' • Best tile: ',' • Ficha mayor: '],[' • Largest tile: ',' • Ficha mayor: '],[' • Score: ',' • Puntuación: '],[' • Moves: ',' • Movimientos: '],[' • Attempts: ',' • Intentos: '],[' • Lights on: ',' • Luces encendidas: '],[' correct',' correctos'],[' matched',' acertados'],[' guesses',' intentos'],[' stars',' estrellas'],[' stars!',' estrellas!'],[' attempts',' intentos'],[' levels',' niveles'],[' matching pairs',' parejas iguales'],[' correct!',' acertados!'],[' minimum purchase',' compra mínima'],['Not a redeemable code.','No es un código canjeable.'],['No Shopify coupon or redeemable prize.','Sin cupón de Shopify ni premio canjeable.'],['New today','Nuevo hoy'],['Try daily challenge','Probar reto diario'],['No penalty for missing a day.','No hay penalización por faltar.'],['You can replay whenever you want.','Puedes volver a jugar cuando quieras.'],['✓ Completed today','✓ Completado hoy'],['You can replay','Puedes repetirlo'],['Demo','Demostración'],['correctly','correctamente'],[' right digit/wrong place',' dígito correcto en otra posición'],[' exact',' exactos'],['HIGHER','MAYOR'],['LOWER','MENOR'],['UP','ARRIBA'],['DOWN','ABAJO'],['LEFT','IZQUIERDA'],['RIGHT','DERECHA']
 ];
+// Read the actual help and illustrated steps from the game implementation.
+if(typeof gameHelp!=='undefined'){
+ for(const [id,text] of Object.entries(guide)){
+  if(!gameHelp[id])continue;
+  ['rules','win','reward'].forEach((field,i)=>map.set(gameHelp[id][field],text[i]));
+ }
+}
+if(typeof visualExamples!=='undefined'){
+ for(const [id,captions] of Object.entries(scenes)){
+  (visualExamples[id]||[]).forEach((frame,i)=>{
+   if(captions[i])map.set(frame.caption,captions[i]);
+  });
+ }
+}
 function translated(en){
  if(map.has(en))return map.get(en);
  const trimmed=en.trim();

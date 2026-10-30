@@ -62,3 +62,17 @@ For real rewards later, build:
 
 ## Notes
 This is a prototype, not a verified production deployment. The twelve-game browser UI has been committed to the `aquaemoticons-play-win` development branch of the `vr85609-collab/freelance-business-solutions` repository in the `aqua-play-win/` folder. It is intentionally isolated from the repository's `main` branch.
+
+## Additional games
+
+The catalog now contains 17 games, including five original additions:
+
+- Pocket Pool: solo six-ball pocket challenge, aim preview, adjustable power, collisions, scratches, and a 20-shot limit. 25 virtual stars for clearing the table.
+- Color Clash: UNO-style color/number matching against a computer, with wilds, skip, and draw-two cards. No stacking. 20 virtual stars for an empty hand.
+- Block Garden: place three-piece trays on an 8×8 board; clear six rows/columns for 25 virtual stars. Pieces do not rotate.
+- Word Search: six generated words on a 9×9 grid, including diagonal/backward placements. Select both endpoints. 20 virtual stars for finding all six.
+- Word Tiles: a Scrabble-style rack challenge using a visible curated word bank, one point per letter plus three for words of five or more letters. Reach 30 points in eight turns for 25 virtual stars. This is not a full Scrabble board or unrestricted dictionary.
+
+All five work offline after the updated application has been loaded and cached online. English/Spanish guides, visual examples, local star rewards, and dark styling are included. Word content is generated using the language selected when a game starts. Real Shopify redemption remains disabled.
+
+Validation: syntax checks and DOM-based gameplay simulations covered all guides, 30 generated word searches, 30 English/Spanish word-tile wins, 40 computer card games, block placement, pool physics and exit cleanup, language toggling, and offline asset registration. A full browser visual/offline run was unavailable because the browser download failed; offline cache registration was checked in source.

@@ -1,0 +1,101 @@
+/* Five self-contained offline games. No purchases or redeemable rewards. */
+const extraGames={pool:poolGame,cards:cardGame,blocks:blockGame,wordsearch:wordSearch,wordtiles:wordTiles};
+const extraNames={pool:'Pocket Pool',cards:'Color Clash',blocks:'Block Garden',wordsearch:'Word Search',wordtiles:'Word Tiles'};
+Object.assign(keys,extraNames);
+const extraTranslations=new Map();
+function pair(en,es){extraTranslations.set(en,es);return en}
+const specs=[
+ ['pool','🎱','Pocket Pool','Billar','Aim • Pocket six balls', 'Apunta • Emboca seis bolas',
+ 'Tap the table to aim from the white ball. Set shot power, then Shoot. Balls bounce and collide; a dotted line shows your aim. Scratching costs an extra shot.', 'Toca la mesa para apuntar desde la bola blanca. Ajusta la fuerza y pulsa Tirar. Las bolas rebotan y chocan; la línea indica tu dirección. Embocar la blanca cuesta un tiro extra.',
+ 'Pocket all six colored balls within 20 shots.', 'Emboca las seis bolas de color en 20 tiros.',25],
+ ['cards','🃏','Color Clash','Choque de colores','Cards • Match color or number','Cartas • Combina color o número',
+ 'Play against the computer. Match the top card by color or number. +2 makes the opponent draw two and skips their turn; skip also skips a turn. A wild uses your selected color. Draw one when you cannot play. No stacking.', 'Juega contra la computadora. Combina el color o número de la carta central. +2 obliga al rival a tomar dos y pierde su turno; salto también salta su turno. El comodín usa el color que elijas. Toma una si no puedes jugar. No se acumulan penalizaciones.',
+ 'Empty your seven-card hand before the computer.', 'Descarta tus siete cartas antes que la computadora.',20],
+ ['blocks','🧱','Block Garden','Jardín de bloques','Planning • Fill rows and columns','Planificación • Completa filas y columnas',
+ 'Select one of three pieces, then tap a board square to place its top-left corner. Pieces cannot overlap or rotate. Full rows and columns clear together. Use all three pieces to receive a new tray.', 'Elige una de tres piezas y toca una casilla para colocar su esquina superior izquierda. No se pueden superponer ni girar. Las filas y columnas completas se borran juntas. Usa las tres piezas para recibir más.',
+ 'Clear six rows or columns before no piece fits.', 'Completa seis filas o columnas antes de quedarte sin espacio.',25],
+ ['wordsearch','🔤','Word Search','Sopa de letras','Words • Discover six hidden words','Palabras • Encuentra seis palabras',
+ 'Find the six listed words. Tap the first letter, then the last letter. Words run horizontally, vertically, or diagonally in either direction. Tap the first letter again to cancel.', 'Encuentra las seis palabras de la lista. Toca la primera letra y después la última. Pueden estar en horizontal, vertical o diagonal en ambos sentidos. Toca otra vez la primera letra para cancelar.',
+ 'Find all six hidden words.', 'Encuentra las seis palabras ocultas.',20],
+ ['wordtiles','🔠','Word Tiles','Fichas de palabras','Words • Build words from your rack','Palabras • Forma palabras con tus fichas',
+ 'Tap letter tiles to build a word, then Submit word. Each tile is worth one point; words of five or more letters earn three bonus points. Use the Word bank to see the supported words. Accepted words cannot repeat. After a word or an exchange you get a new rack.', 'Toca fichas para formar una palabra y pulsa Enviar palabra. Cada letra vale un punto; cinco letras o más dan tres puntos extra. Consulta Palabras válidas para ver las palabras admitidas. No se pueden repetir. Después de enviar o cambiar recibes nuevas fichas.',
+ 'Score 30 points within eight turns. Invalid words do not use a turn.', 'Consigue 30 puntos en ocho turnos. Una palabra inválida no consume turno.',25]
+];
+for(const [id,emoji,en,es,sub,subes,rules,ruleses,goal,goales,reward] of specs){
+ pair(en,es);pair(sub,subes);pair(rules,ruleses);pair(goal,goales);
+ const rewardText=pair('Win: '+reward+' virtual stars.','Victoria: '+reward+' estrellas virtuales.');
+ gameHelp[id]={category:'Free Play',rules,win:goal,reward:rewardText};
+ const sample=id==='pool'?['⚪','↗','🔴','🕳️']:id==='cards'?['🔴 5','→','🔴 2','✓']:id==='blocks'?['■','■','□','□']:id==='wordsearch'?['S','T','A','R']:['S','T','A','R'];
+ visualExamples[id]=[{cols:4,board:sample,mark:[0],caption:rules},{cols:4,board:sample,highlight:[0,1,2,3],caption:goal}];
+ const holder=document.createElement('div');holder.className='tilewrap';
+ const tile=document.createElement('button');tile.className='tile';tile.dataset.game=id;tile.innerHTML='<span class="emoji">'+emoji+'</span><h3>'+en+'</h3><small>'+sub+'</small>';tile.onclick=()=>open(id);holder.appendChild(tile);
+ const info=btn('ⓘ Info',()=>showHelp(id),holder);info.className='tile-info';info.setAttribute('aria-label','How to play '+en+' and rewards');
+ $('#catalog .gamegrid').appendChild(holder);
+}
+const l=(en,es)=>{pair(en,es);return en;};
+function extraEnd(message){finished=true;feedback.textContent=message;btn(l('Try again','Intentar de nuevo'),()=>open(game));}
+function field(label,type,value,min,max){const box=document.createElement('label');box.textContent=label+' ';const input=document.createElement('input');input.type=type;input.value=value;input.min=min;input.max=max;box.appendChild(input);controls.appendChild(box);return input;}
+function poolGame(){
+ board.className='board pool-board';const canvas=document.createElement('canvas');canvas.width=640;canvas.height=340;canvas.style.cssText='width:100%;border-radius:18px;touch-action:none';canvas.setAttribute('aria-label',l('Pool table: tap to aim','Mesa de billar: toca para apuntar'));board.appendChild(canvas);
+ const c=canvas.getContext('2d'),token=run,R=9,pockets=[[22,22],[320,18],[618,22],[22,318],[320,322],[618,318]];
+ const balls=[{x:155,y:170,vx:0,vy:0,color:'#fff',cue:true},...Array.from({length:6},(_,i)=>({x:400+(i%3)*26,y:140+Math.floor(i/3)*40,vx:0,vy:0,color:['#f9c846','#e84c4c','#70bcff','#ba7bff','#ff9752','#9fe170'][i]}))];
+ let angle=0,moving=false,shots=0,scratch=false;
+ const power=field(l('Power','Fuerza'),'range',65,20,100);
+ const shoot=btn(l('Shoot','Tirar'),()=>{if(moving||finished||shots>=20)return;shots++;scratch=false;const b=balls[0];b.vx=Math.cos(angle)*Number(power.value)/5;b.vy=Math.sin(angle)*Number(power.value)/5;moving=true;shoot.disabled=true;});
+ function aim(x,y){if(moving||finished)return;const rect=canvas.getBoundingClientRect();angle=Math.atan2((y-rect.top)*340/rect.height-balls[0].y,(x-rect.left)*640/rect.width-balls[0].x);}
+ canvas.onpointerdown=e=>aim(e.clientX,e.clientY);
+ canvas.tabIndex=0;canvas.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();angle+=(e.key==='ArrowLeft'?-.08:.08)}if(e.key===' ') {e.preventDefault();shoot.click()}};
+ function frame(){if(token!==run||game!=='pool')return;
+  if(moving){for(let sub=0;sub<3;sub++){
+   for(const b of balls){if(b.out)continue;b.x+=b.vx/3;b.y+=b.vy/3;b.vx*=.989;b.vy*=.989;
+    if(pockets.some(([x,y])=>Math.hypot(b.x-x,b.y-y)<19)){b.out=true;b.vx=b.vy=0;if(b.cue)scratch=true;continue;}
+    if(b.x<22+R||b.x>618-R){b.x=Math.max(22+R,Math.min(618-R,b.x));b.vx*=-.86}if(b.y<22+R||b.y>318-R){b.y=Math.max(22+R,Math.min(318-R,b.y));b.vy*=-.86}
+   }
+   for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){const a=balls[i],b=balls[j];if(a.out||b.out)continue;let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d>0&&d<2*R){let nx=dx/d,ny=dy/d,over=(2*R-d)/2;a.x-=nx*over;a.y-=ny*over;b.x+=nx*over;b.y+=ny*over;let speed=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;if(speed>0){a.vx-=speed*nx;a.vy-=speed*ny;b.vx+=speed*nx;b.vy+=speed*ny}}}
+  }
+  if(balls.every(b=>b.out||Math.hypot(b.vx,b.vy)<.15)){moving=false;balls.forEach(b=>b.vx=b.vy=0);if(scratch){shots++;let spot={x:155,y:170};for(let y=45;y<300;y+=22)for(let x=45;x<300;x+=22)if(balls.slice(1).every(b=>b.out||Math.hypot(b.x-x,b.y-y)>22))spot={x,y};Object.assign(balls[0],spot,{out:false});feedback.textContent=l('Scratch: one extra shot used.','Falta: se consume un tiro extra.')}shoot.disabled=false;if(shots<=20&&balls.slice(1).every(b=>b.out)){win(25,l('All six balls pocketed!','¡Embocaste las seis bolas!'));shoot.disabled=true}else if(shots>=20){extraEnd(l('No shots left.','No quedan tiros.'));shoot.disabled=true}}
+  }
+  status.textContent=l('Pocketed: ','Embocadas: ')+balls.slice(1).filter(b=>b.out).length+'/6 • '+l('Shots: ','Tiros: ')+shots+'/20';
+  c.fillStyle='#6b452c';c.fillRect(0,0,640,340);c.fillStyle='#116c58';c.fillRect(20,20,600,300);c.fillStyle='#071b22';pockets.forEach(([x,y])=>{c.beginPath();c.arc(x,y,19,0,Math.PI*2);c.fill()});
+  if(!moving&&!finished){c.strokeStyle='#fff9';c.setLineDash([7,7]);c.beginPath();c.moveTo(balls[0].x,balls[0].y);c.lineTo(balls[0].x+Math.cos(angle)*180,balls[0].y+Math.sin(angle)*180);c.stroke();c.setLineDash([])}
+  balls.filter(b=>!b.out).forEach(b=>{c.fillStyle=b.color;c.beginPath();c.arc(b.x,b.y,R,0,Math.PI*2);c.fill();c.strokeStyle='#132c39';c.stroke()});
+  if(!finished)requestAnimationFrame(frame);
+ }frame();
+}
+function cardGame(){
+ const colors=['🔴','🔵','🟢','🟡'];let deck=shuffle(colors.flatMap(color=>[0,1,2,3,4,5,6,7,8,9,'+2','⏭'].flatMap(value=>[{color,value},{color,value}])).concat(Array.from({length:4},()=>({color:'🌈',value:'★'}))));
+ const take=()=>{if(!deck.length){deck=shuffle(discard.splice(0,discard.length-1))}return deck.pop()};
+ let hand=deck.splice(0,7),cpu=deck.splice(0,7),discard=[deck.pop()],active=discard[0].color==='🌈'?colors[0]:discard[0].color;
+ board.className='board card-rack';
+ const color=document.createElement('select');color.setAttribute('aria-label',l('Wild color','Color del comodín'));colors.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;color.appendChild(o)});controls.appendChild(color);
+ const valid=card=>card.color==='🌈'||card.color===active||card.value===discard.at(-1).value;
+ const show=()=>{board.replaceChildren();status.textContent=l('Computer cards: ','Cartas del rival: ')+cpu.length+' • '+l('Top: ','Centro: ')+discard.at(-1).color+' '+discard.at(-1).value+' • '+l('Active color: ','Color activo: ')+active;hand.forEach((v,i)=>{const b=btn(v.color+' '+v.value,()=>play(i),board);b.disabled=finished||!valid(v);b.className='playing-card'})};
+ const drawCards=(a,n)=>{for(let i=0;i<n;i++){const card=take();if(card)a.push(card)}};
+ function computer(){const i=cpu.findIndex(valid);if(i<0){drawCards(cpu,1);feedback.textContent=l('Computer drew. Your turn.','El rival tomó una carta. Tu turno.');return}const card=cpu.splice(i,1)[0];discard.push(card);active=card.color==='🌈'?colors.reduce((a,b)=>cpu.filter(v=>v.color===a).length>=cpu.filter(v=>v.color===b).length?a:b):card.color;if(!cpu.length){extraEnd(l('Computer emptied its hand first.','El rival se quedó sin cartas primero.'));draw.disabled=true;return}if(card.value==='+2'){drawCards(hand,2);computer()}else if(card.value==='⏭')computer();}
+ function play(i){if(finished||!valid(hand[i]))return;const card=hand.splice(i,1)[0];discard.push(card);active=card.color==='🌈'?color.value:card.color;if(!hand.length){win(20,l('You emptied your hand!','¡Te quedaste sin cartas!'));draw.disabled=true;show();return}feedback.textContent='';if(card.value==='+2')drawCards(cpu,2);else if(card.value!=='⏭')computer();show()}
+ const draw=btn(l('Draw one · pass','Tomar una · pasar'),()=>{if(finished)return;if(hand.some(valid)){feedback.textContent=l('Play a highlighted card first.','Juega una carta disponible.');return}drawCards(hand,1);computer();show()});show();
+}
+const blockShapes=[[[0,0]],[[0,0],[0,1]],[[0,0],[1,0]],[[0,0],[0,1],[0,2]],[[0,0],[1,0],[2,0]],[[0,0],[0,1],[1,0],[1,1]],[[0,0],[1,0],[1,1]],[[0,0],[0,1],[1,1]],[[0,0],[0,1],[0,2],[0,3]]];
+function blockGame(){let cells=Array(64).fill(false),tray=[],selected=0,lines=0;const bs=makeBoard(Array(64).fill(''),'block-grid');const trayBox=document.createElement('div');trayBox.className='piece-tray';controls.appendChild(trayBox);
+ const fits=(shape,r,c)=>shape.every(([dr,dc])=>r+dr<8&&c+dc<8&&!cells[(r+dr)*8+c+dc]);
+ const refill=()=>{tray=Array.from({length:3},()=>blockShapes[rnd(blockShapes.length)]);selected=0};
+ function draw(){bs.forEach((b,i)=>{b.textContent=cells[i]?'■':'';b.classList.toggle('occupied',cells[i]);b.setAttribute('aria-label',l('Row ','Fila ')+(Math.floor(i/8)+1)+l(' column ',' columna ')+(i%8+1));b.disabled=finished});trayBox.replaceChildren();tray.forEach((shape,i)=>{const b=btn('',()=>{selected=i;draw()},trayBox);b.className='piece-choice'+(selected===i?' selected':'');b.disabled=!shape||finished;if(!shape){b.textContent='✓';return}const w=Math.max(...shape.map(x=>x[1]))+1,h=Math.max(...shape.map(x=>x[0]))+1;b.style.gridTemplateColumns='repeat('+w+',14px)';for(let r=0;r<h;r++)for(let c=0;c<w;c++){const dot=document.createElement('span');dot.className=shape.some(([y,x])=>y===r&&x===c)?'piece-dot':'piece-gap';b.appendChild(dot)}b.setAttribute('aria-label',l('Piece ','Pieza ')+(i+1))});status.textContent=l('Lines cleared: ','Líneas completas: ')+lines+'/6';}
+ bs.forEach((b,i)=>b.onclick=()=>{if(finished||!tray[selected])return;const r=Math.floor(i/8),c=i%8,shape=tray[selected];if(!fits(shape,r,c)){feedback.textContent=l('That piece does not fit here.','La pieza no cabe aquí.');return}feedback.textContent='';shape.forEach(([dr,dc])=>cells[(r+dr)*8+c+dc]=true);tray[selected]=null;const rows=Array.from({length:8},(_,r)=>r).filter(r=>cells.slice(r*8,r*8+8).every(Boolean)),cols=Array.from({length:8},(_,c)=>c).filter(c=>Array.from({length:8},(_,r)=>cells[r*8+c]).every(Boolean));lines+=rows.length+cols.length;rows.forEach(r=>{for(let c=0;c<8;c++)cells[r*8+c]=false});cols.forEach(c=>{for(let r=0;r<8;r++)cells[r*8+c]=false});if(lines>=6)win(25,l('Six lines cleared!','¡Seis líneas completas!'));if(tray.every(x=>!x))refill();selected=Math.max(0,tray.findIndex(Boolean));if(!finished&&!tray.some(s=>s&&cells.some((_,i)=>fits(s,Math.floor(i/8),i%8))))extraEnd(l('No pieces fit.','Ninguna pieza cabe.'));draw()});refill();draw();}
+function wordSearch(){
+ const spanish=window.AquaLanguage?.language==='es',words=shuffle(spanish?['AGUA','LUNA','PLAYA','FLOR','GATO','LIBRO','CIELO','NUBE','PERRO','CASA','SOL','MAR']:['WATER','MOON','BEACH','FLOWER','CAT','BOOK','SKY','CLOUD','DOG','HOME','SUN','SEA']).slice(0,6);
+ const size=9,grid=Array(size*size).fill(''),placed=[],directions=[[0,1],[1,0],[1,1],[1,-1],[0,-1],[-1,0],[-1,-1],[-1,1]];
+ words.forEach(word=>{let done=false;for(let attempt=0;attempt<1000&&!done;attempt++){const r=rnd(size),c=rnd(size),[dr,dc]=directions[rnd(8)],path=Array.from(word,(_,j)=>[r+dr*j,c+dc*j]);if(path.every(([y,x],j)=>y>=0&&y<size&&x>=0&&x<size&&(!grid[y*size+x]||grid[y*size+x]===word[j]))){const indices=path.map(([y,x])=>y*size+x);indices.forEach((v,j)=>grid[v]=word[j]);placed.push({word,indices});done=true}}if(!done)throw Error('Unable to place word')});
+ grid.forEach((v,i)=>{if(!v)grid[i]='ABCDEFGHIJKLMNOPQRSTUVWXYZ'[rnd(26)]});let first=null,found=new Set(),marks=new Set();const bs=makeBoard(grid,'word-grid');const list=document.createElement('p');list.className='word-list';controls.appendChild(list);
+ function draw(){list.textContent=placed.map(p=>(found.has(p.word)?'✓ ':'')+p.word).join(' · ');status.textContent=l('Words found: ','Palabras encontradas: ')+found.size+'/6';bs.forEach((b,i)=>{b.classList.toggle('matched',marks.has(i));b.classList.toggle('on',i===first);b.disabled=finished})}
+ bs.forEach((b,i)=>b.onclick=()=>{if(finished)return;if(first===null){first=i;draw();return}if(first===i){first=null;draw();return}const r0=Math.floor(first/size),c0=first%size,dr=Math.floor(i/size)-r0,dc=i%size-c0,len=Math.max(Math.abs(dr),Math.abs(dc));const straight=dr===0||dc===0||Math.abs(dr)===Math.abs(dc);const path=straight?Array.from({length:len+1},(_,j)=>(r0+Math.sign(dr)*j)*size+c0+Math.sign(dc)*j):[];const text=path.map(v=>grid[v]).join('');const match=placed.find(p=>!found.has(p.word)&&(p.word===text||p.word===[...text].reverse().join('')));if(match){found.add(match.word);path.forEach(v=>marks.add(v));feedback.textContent='✓ '+match.word;if(found.size===6)win(20,l('All words found!','¡Encontraste todas las palabras!'))}else feedback.textContent=l('Try another pair of endpoints.','Prueba otros extremos.');first=null;draw()});draw();
+}
+const wordBanks={en:['STAR','START','STARS','ART','RAT','RATS','TAR','CAR','CARS','CART','CARTS','CAT','CATS','ACT','ACTS','SEA','SEAT','EAT','EATS','TEA','TEAS','RATE','RATES','TEAR','TEARS','CARE','RACE','TRACE','REACT','REACH','HEART','EARTH','HAT','HATS','HEAT','HARE','HEAR','EAR','EARS','READ','DEAR','DARE','TRADE','TREAD','DATE','DATES','WATER','LATE','TALE','TALES','SALE','SEAL','REAL','DEAL','LEAD','ROAD','ROADS','LOAD','LOADS','COLD','GOLD','DOG','DOGS','GOD','LOG','LOGS','WORD','WORDS','SWORD','WORLD','LOW','ROW','ROWS'],es:['CASA','CASAS','COSA','COSAS','SACO','SACOS','CASO','CASOS','SACA','SACAS','SOL','LOS','LAS','SAL','SALA','SALAS','OLA','OLAS','LUNA','UNA','UNAS','LUNAS','LANA','LANAS','AGUA','AGUAS','GATO','GATOS','GOTA','GOTAS','PATO','PATOS','ROPA','PARO','PAROS','PASO','PASOS','ROSA','ROSAS','ARO','AROS','MAR','AMOR','RAMO','RAMOS','MORA','MORAS','LIBRO','LIBROS','HOLA','HALO','HALOS','FLOR','FLORA','FLORAS','RUTA','RUTAS','RATO','RATOS','RATA','RATAS','TARDE','TARDES']};
+function wordTiles(){
+ const language=window.AquaLanguage?.language==='es'?'es':'en',bank=wordBanks[language];let rack=[],picked=[],used=new Set(),score=0,turn=0;
+ board.className='board letter-rack';const entry=document.createElement('p');entry.className='word-entry';controls.appendChild(entry);const bankBox=document.createElement('details'),summary=document.createElement('summary');summary.textContent=l('Word bank','Palabras válidas');bankBox.appendChild(summary);const bankText=document.createElement('p');bankText.textContent=bank.join(' · ');bankBox.appendChild(bankText);controls.appendChild(bankBox);
+ function newRack(){const candidates=bank.filter(w=>w.length>=4&&!used.has(w));const word=candidates[rnd(candidates.length)];rack=shuffle([...word,...Array.from({length:7-word.length},()=>language==='es'?'AEIOURS'[rnd(7)]:'AEIOSTR'[rnd(7)])]);picked=[];}
+ function show(){board.replaceChildren();rack.forEach((v,i)=>{const b=btn(v,()=>{picked.push(i);show()},board);b.className='letter-tile';b.disabled=finished||picked.includes(i)});entry.textContent=picked.map(i=>rack[i]).join('')||'…';status.textContent=l('Score: ','Puntuación: ')+score+'/30 • '+l('Turns: ','Turnos: ')+turn+'/8';}
+ const undo=btn(l('Undo letter','Quitar letra'),()=>{picked.pop();show()}),clear=btn(l('Clear word','Borrar palabra'),()=>{picked=[];show()}),submit=btn(l('Submit word','Enviar palabra'),()=>{if(finished)return;const word=picked.map(i=>rack[i]).join('');if(!bank.includes(word)||used.has(word)){feedback.textContent=l('Use a new word from the Word bank.','Usa una palabra nueva de la lista.');return}used.add(word);score+=word.length+(word.length>=5?3:0);turn++;feedback.textContent='✓ '+word;if(score>=30){win(25,l('Word goal reached!','¡Objetivo alcanzado!'));end()}else if(turn>=8){extraEnd(l('Eight turns complete. Try a new rack!','Ocho turnos completos. ¡Prueba otra partida!'));end()}else newRack();show();});
+ const exchange=btn(l('Exchange · uses a turn','Cambiar · consume turno'),()=>{if(finished)return;turn++;if(turn>=8){extraEnd(l('No turns left.','No quedan turnos.'));end()}else newRack();show()});
+ function end(){[undo,clear,submit,exchange].forEach(b=>b.disabled=true)}newRack();show();
+}

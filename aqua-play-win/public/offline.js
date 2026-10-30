@@ -9,6 +9,12 @@
  };
  window.addEventListener('online',update);window.addEventListener('offline',update);update();
  if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
+   const wasControlled=!!navigator.serviceWorker.controller;
+   navigator.serviceWorker.addEventListener('controllerchange',()=>{
+     if(!wasControlled||document.getElementById('updateApp'))return;
+     const refresh=document.createElement('button');refresh.type='button';refresh.className='action';refresh.id='updateApp';refresh.textContent='Update app';
+     refresh.onclick=()=>location.reload();document.querySelector('.offline-panel .topline')?.appendChild(refresh);
+   });
    window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(err=>console.warn('Offline setup unavailable:',err)));
  }
  window.addEventListener('beforeinstallprompt',event=>{

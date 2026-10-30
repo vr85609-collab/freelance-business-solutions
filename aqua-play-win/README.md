@@ -75,4 +75,10 @@ The catalog now contains 17 games, including five original additions:
 
 All five work offline after the updated application has been loaded and cached online. English/Spanish guides, visual examples, local star rewards, and dark styling are included. Word content is generated using the language selected when a game starts. Real Shopify redemption remains disabled.
 
-Validation: syntax checks and DOM-based gameplay simulations covered all guides, 30 generated word searches, 30 English/Spanish word-tile wins, 40 computer card games, block placement, pool physics and exit cleanup, language toggling, and offline asset registration. A full browser visual/offline run was unavailable because the browser download failed; offline cache registration was checked in source.
+## Debugging and regression tests
+
+Run `npm ci` and `npm test` from `aqua-play-win`. The suite contains 24 checks covering all 17 games, including generated word-search and word-tile wins in both languages, computer card games, solving the logic/slide puzzles, round completion, navigation, timer cancellation, storage failures, and cached release consistency.
+
+Pool uses a fixed-step physics engine with refresh-rate equivalence tests (30/60/120 Hz), collision and six-pocket tests, scratch recovery, double-shot prevention, terminal shot limits, and animation cleanup. Drag on the table or use the angle slider; power and Shoot stay immediately above the table. Idle tables do not run an animation loop.
+
+All games expose Restart game. Navigation invalidates prior sessions, removes appended boards, cancels pending callbacks and input listeners, and disables finished rounds. Offline files are served from a fully installed release to avoid combining old scripts with new HTML. An Update app button appears when an already-controlled page receives a new release.

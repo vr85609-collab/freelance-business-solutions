@@ -6,7 +6,7 @@ const extraTranslations=new Map();
 function pair(en,es){extraTranslations.set(en,es);return en}
 const specs=[
  ['pool','🎱','Pocket Pool','Billar','Aim • Pocket six balls', 'Apunta • Emboca seis bolas',
- 'Tap the table to aim from the white ball. Set shot power, then Shoot. Balls bounce and collide; a dotted line shows your aim. Scratching costs an extra shot.', 'Toca la mesa para apuntar desde la bola blanca. Ajusta la fuerza y pulsa Tirar. Las bolas rebotan y chocan; la línea indica tu dirección. Embocar la blanca cuesta un tiro extra.',
+ 'Tap or drag on the table to aim from the white ball, or use the Aim angle slider. Set power, then Shoot. The dotted line previews the path. Scratching costs an extra shot.', 'Toca o arrastra sobre la mesa para apuntar desde la bola blanca, o usa el ángulo. Ajusta la fuerza y pulsa Tirar. La línea muestra el recorrido. Embocar la blanca cuesta un tiro extra.',
  'Pocket all six colored balls within 20 shots.', 'Emboca las seis bolas de color en 20 tiros.',25],
  ['cards','🃏','Color Clash','Choque de colores','Cards • Match color or number','Cartas • Combina color o número',
  'Play against the computer. Match the top card by color or number. +2 makes the opponent draw two and skips their turn; skip also skips a turn. A wild uses your selected color. Draw one when you cannot play. No stacking.', 'Juega contra la computadora. Combina el color o número de la carta central. +2 obliga al rival a tomar dos y pierde su turno; salto también salta su turno. El comodín usa el color que elijas. Toma una si no puedes jugar. No se acumulan penalizaciones.',
@@ -33,34 +33,33 @@ for(const [id,emoji,en,es,sub,subes,rules,ruleses,goal,goales,reward] of specs){
  $('#catalog .gamegrid').appendChild(holder);
 }
 const l=(en,es)=>{pair(en,es);return en;};
-function extraEnd(message){finished=true;feedback.textContent=message;btn(l('Try again','Intentar de nuevo'),()=>open(game));}
+function extraEnd(message){if(finished)return;finished=true;stopInputs();feedback.textContent=message;btn(l('Try again','Intentar de nuevo'),()=>open(game));}
 function field(label,type,value,min,max){const box=document.createElement('label');box.textContent=label+' ';const input=document.createElement('input');input.type=type;input.value=value;input.min=min;input.max=max;box.appendChild(input);controls.appendChild(box);return input;}
 function poolGame(){
- board.className='board pool-board';const canvas=document.createElement('canvas');canvas.width=640;canvas.height=340;canvas.style.cssText='width:100%;border-radius:18px;touch-action:none';canvas.setAttribute('aria-label',l('Pool table: tap to aim','Mesa de billar: toca para apuntar'));board.appendChild(canvas);
- const c=canvas.getContext('2d'),token=run,R=9,pockets=[[22,22],[320,18],[618,22],[22,318],[320,322],[618,318]];
- const balls=[{x:155,y:170,vx:0,vy:0,color:'#fff',cue:true},...Array.from({length:6},(_,i)=>({x:400+(i%3)*26,y:140+Math.floor(i/3)*40,vx:0,vy:0,color:['#f9c846','#e84c4c','#70bcff','#ba7bff','#ff9752','#9fe170'][i]}))];
- let angle=0,moving=false,shots=0,scratch=false;
- const power=field(l('Power','Fuerza'),'range',65,20,100);
- const shoot=btn(l('Shoot','Tirar'),()=>{if(moving||finished||shots>=20)return;shots++;scratch=false;const b=balls[0];b.vx=Math.cos(angle)*Number(power.value)/5;b.vy=Math.sin(angle)*Number(power.value)/5;moving=true;shoot.disabled=true;});
- function aim(x,y){if(moving||finished)return;const rect=canvas.getBoundingClientRect();angle=Math.atan2((y-rect.top)*340/rect.height-balls[0].y,(x-rect.left)*640/rect.width-balls[0].x);}
- canvas.onpointerdown=e=>aim(e.clientX,e.clientY);
- canvas.tabIndex=0;canvas.onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();angle+=(e.key==='ArrowLeft'?-.08:.08)}if(e.key===' ') {e.preventDefault();shoot.click()}};
- function frame(){if(token!==run||game!=='pool')return;
-  if(moving){for(let sub=0;sub<3;sub++){
-   for(const b of balls){if(b.out)continue;b.x+=b.vx/3;b.y+=b.vy/3;b.vx*=.989;b.vy*=.989;
-    if(pockets.some(([x,y])=>Math.hypot(b.x-x,b.y-y)<19)){b.out=true;b.vx=b.vy=0;if(b.cue)scratch=true;continue;}
-    if(b.x<22+R||b.x>618-R){b.x=Math.max(22+R,Math.min(618-R,b.x));b.vx*=-.86}if(b.y<22+R||b.y>318-R){b.y=Math.max(22+R,Math.min(318-R,b.y));b.vy*=-.86}
-   }
-   for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){const a=balls[i],b=balls[j];if(a.out||b.out)continue;let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);if(d>0&&d<2*R){let nx=dx/d,ny=dy/d,over=(2*R-d)/2;a.x-=nx*over;a.y-=ny*over;b.x+=nx*over;b.y+=ny*over;let speed=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;if(speed>0){a.vx-=speed*nx;a.vy-=speed*ny;b.vx+=speed*nx;b.vy+=speed*ny}}}
-  }
-  if(balls.every(b=>b.out||Math.hypot(b.vx,b.vy)<.15)){moving=false;balls.forEach(b=>b.vx=b.vy=0);if(scratch){shots++;let spot={x:155,y:170};for(let y=45;y<300;y+=22)for(let x=45;x<300;x+=22)if(balls.slice(1).every(b=>b.out||Math.hypot(b.x-x,b.y-y)>22))spot={x,y};Object.assign(balls[0],spot,{out:false});feedback.textContent=l('Scratch: one extra shot used.','Falta: se consume un tiro extra.')}shoot.disabled=false;if(shots<=20&&balls.slice(1).every(b=>b.out)){win(25,l('All six balls pocketed!','¡Embocaste las seis bolas!'));shoot.disabled=true}else if(shots>=20){extraEnd(l('No shots left.','No quedan tiros.'));shoot.disabled=true}}
-  }
-  status.textContent=l('Pocketed: ','Embocadas: ')+balls.slice(1).filter(b=>b.out).length+'/6 • '+l('Shots: ','Tiros: ')+shots+'/20';
-  c.fillStyle='#6b452c';c.fillRect(0,0,640,340);c.fillStyle='#116c58';c.fillRect(20,20,600,300);c.fillStyle='#071b22';pockets.forEach(([x,y])=>{c.beginPath();c.arc(x,y,19,0,Math.PI*2);c.fill()});
-  if(!moving&&!finished){c.strokeStyle='#fff9';c.setLineDash([7,7]);c.beginPath();c.moveTo(balls[0].x,balls[0].y);c.lineTo(balls[0].x+Math.cos(angle)*180,balls[0].y+Math.sin(angle)*180);c.stroke();c.setLineDash([])}
-  balls.filter(b=>!b.out).forEach(b=>{c.fillStyle=b.color;c.beginPath();c.arc(b.x,b.y,R,0,Math.PI*2);c.fill();c.strokeStyle='#132c39';c.stroke()});
-  if(!finished)requestAnimationFrame(frame);
- }frame();
+ board.className='board pool-board';const token=run,model=new window.PoolEngine();
+ const canvas=document.createElement('canvas');canvas.width=640;canvas.height=340;canvas.tabIndex=0;canvas.setAttribute('aria-label',l('Pool table: drag to aim, then Shoot','Mesa de billar: arrastra para apuntar y pulsa Tirar'));
+ const toolbar=document.createElement('div');toolbar.className='pool-toolbar';board.appendChild(toolbar);board.appendChild(canvas);
+ const c=canvas.getContext('2d');if(!c){extraEnd(l('The table could not load. Try another browser.','No se pudo cargar la mesa. Prueba otro navegador.'));return}
+ let angle=0,dragging=false,frameId=0,lastTime=null,ended=false,lastStatus='';
+ function slider(en,es,value,min,max){const label=document.createElement('label');const text=document.createElement('span');text.textContent=l(en,es);label.appendChild(text);const el=document.createElement('input');el.type='range';el.min=min;el.max=max;el.value=value;label.appendChild(el);toolbar.appendChild(label);return el}
+ const power=slider('Power','Fuerza',65,10,100),direction=slider('Aim angle','Ángulo',0,-180,180);
+ const shoot=btn(l('Shoot','Tirar'),()=>{if(model.shoot(angle,Number(power.value))){lastTime=null;update();schedule()}},toolbar);
+ const hint=document.createElement('p');hint.className='pool-hint';hint.textContent=l('Drag on the table to aim. The line points where the white ball will travel. Use the angle slider for fine adjustments.','Arrastra sobre la mesa para apuntar. La línea indica hacia dónde irá la bola blanca. Usa el ángulo para ajustar.');board.appendChild(hint);
+ function aim(e){if(model.moving||finished)return;const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const x=(e.clientX-rect.left)*640/rect.width,y=(e.clientY-rect.top)*340/rect.height;const cue=model.balls[0];if(Math.hypot(x-cue.x,y-cue.y)<4)return;angle=Math.atan2(y-cue.y,x-cue.x);direction.value=String(Math.round(angle*180/Math.PI));draw()}
+ canvas.onpointerdown=e=>{if(model.moving||finished)return;dragging=true;canvas.setPointerCapture?.(e.pointerId);aim(e)};
+ canvas.onpointermove=e=>{if(dragging)aim(e)};
+ canvas.onpointerup=e=>{if(dragging)aim(e);dragging=false};canvas.onpointercancel=()=>dragging=false;
+ direction.oninput=()=>{if(model.moving||finished)return;angle=Number(direction.value)*Math.PI/180;draw()};
+ canvas.onkeydown=e=>{if(model.moving||finished)return;if(['ArrowLeft','ArrowRight',' ','Enter'].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key==='ArrowRight'){angle+=(e.key==='ArrowLeft'?-.02:.02);angle=Math.atan2(Math.sin(angle),Math.cos(angle));direction.value=String(Math.round(angle*180/Math.PI));draw()}else if(e.key===' '||e.key==='Enter')shoot.click()};
+ function update(){const text=l('Pocketed: ','Embocadas: ')+model.pocketed+'/6 • '+l('Shots: ','Tiros: ')+Math.min(model.shots,20)+'/20';if(text!==lastStatus){status.textContent=text;lastStatus=text}shoot.disabled=model.moving||finished;direction.disabled=model.moving||finished;power.disabled=model.moving||finished;}
+ function draw(){
+  c.clearRect(0,0,640,340);c.fillStyle='#6b452c';c.fillRect(0,0,640,340);c.fillStyle='#116c58';c.fillRect(20,20,600,300);c.fillStyle='#071b22';window.PoolGeometry.pockets.forEach(([x,y])=>{c.beginPath();c.arc(x,y,21,0,Math.PI*2);c.fill()});
+  const cue=model.balls[0];if(!model.moving&&!finished){const dx=Math.cos(angle),dy=Math.sin(angle);const tx=dx>0?(611-cue.x)/dx:dx<0?(29-cue.x)/dx:Infinity,ty=dy>0?(311-cue.y)/dy:dy<0?(29-cue.y)/dy:Infinity;let distance=Math.max(0,Math.min(tx,ty));for(const b of model.balls.slice(1)){if(b.out)continue;const x=b.x-cue.x,y=b.y-cue.y,projection=x*dx+y*dy,side=x*x+y*y-projection*projection;if(projection>0&&side<324)distance=Math.min(distance,projection-Math.sqrt(324-side))}c.strokeStyle='#fff';c.lineWidth=2;c.setLineDash([7,6]);c.beginPath();c.moveTo(cue.x,cue.y);c.lineTo(cue.x+dx*distance,cue.y+dy*distance);c.stroke();c.setLineDash([]);c.fillStyle='#fff9';c.beginPath();c.arc(cue.x+dx*distance,cue.y+dy*distance,9,0,Math.PI*2);c.fill();}
+  model.balls.filter(b=>!b.out).forEach((b,i)=>{c.fillStyle=b.color;c.beginPath();c.arc(b.x,b.y,9,0,Math.PI*2);c.fill();c.strokeStyle='#132c39';c.lineWidth=1;c.stroke();if(!b.cue){c.fillStyle='#122337';c.font='bold 10px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(String(b.number),b.x,b.y)}});
+ }
+ function schedule(){if(!frameId&&model.moving)frameId=requestAnimationFrame(frame)}
+ function frame(timestamp){frameId=0;if(token!==run||game!=='pool')return;const dt=lastTime===null?1/60:(timestamp-lastTime)/1000;lastTime=timestamp;model.advance(dt);if(!model.moving){if(model.lastScratch)feedback.textContent=l('Scratch: one extra shot used. White ball reset.','Falta: se consume un tiro extra. La bola blanca vuelve a la mesa.');if(model.result&&!ended){ended=true;if(model.result==='win')win(25,l('All six balls pocketed!','¡Embocaste las seis bolas!'));else extraEnd(l('No shots left.','No quedan tiros.'));}}update();draw();schedule();}
+ onCleanup(()=>{cancelAnimationFrame(frameId);canvas.onpointerdown=canvas.onpointermove=canvas.onpointerup=canvas.onpointercancel=canvas.onkeydown=null});update();draw();
 }
 function cardGame(){
  const colors=['🔴','🔵','🟢','🟡'];let deck=shuffle(colors.flatMap(color=>[0,1,2,3,4,5,6,7,8,9,'+2','⏭'].flatMap(value=>[{color,value},{color,value}])).concat(Array.from({length:4},()=>({color:'🌈',value:'★'}))));

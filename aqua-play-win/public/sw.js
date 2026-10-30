@@ -1,5 +1,5 @@
-const CACHE='aqua-arcade-offline-v3';
-const ASSETS=['/','/index.html','/app.js','/extra-games.js','/theme.js','/language.js','/offline.js','/manifest.webmanifest','/icon.svg'];
+const CACHE='aqua-arcade-offline-v4';
+const ASSETS=['/','/index.html','/app.js','/extra-games.js','/pool-engine.js','/theme.js','/language.js','/offline.js','/manifest.webmanifest','/icon.svg'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
 });
@@ -15,17 +15,14 @@ self.addEventListener('fetch',event=>{
   const url=new URL(request.url);
   if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/'))return; // Never cache gameplay or future reward API calls.
+  // Serve one fully installed release so HTML and game scripts cannot mix versions.
   if(request.mode==='navigate'){
-    event.respondWith(fetch(request).then(response=>{
-      if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(c=>c.put('/index.html',copy)));}
-      return response;
-    }).catch(async()=>await caches.match('/index.html')||await caches.match('/')));
+    event.respondWith(caches.open(CACHE).then(async cache=>
+      await cache.match('/index.html')||await fetch(request)));
     return;
   }
   if(ASSETS.includes(url.pathname)){
-    event.respondWith(caches.match(url.pathname).then(cached=>{
-      const fresh=fetch(request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(c=>c.put(url.pathname,copy)));}return response}).catch(()=>cached);
-      return cached||fresh;
-    }));
+    event.respondWith(caches.open(CACHE).then(async cache=>
+      await cache.match(url.pathname)||await fetch(request)));
   }
 });

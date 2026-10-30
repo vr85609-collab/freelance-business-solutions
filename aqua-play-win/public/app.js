@@ -5,21 +5,27 @@ const tips={bubbles:'Pick the lucky bubble 10 times. The server checks each gues
 const today=()=>new Date().toLocaleDateString('en-CA');
 const storeKey='aqua_arcade_v2';
 let progress;try{progress=JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{progress={}}
-progress={stars:0,finished:0,dates:[],daily:{},...progress};
+progress={stars:0,finished:0,dates:[],daily:{},...(progress&&typeof progress==='object'?progress:{})};
+progress.stars=Number.isFinite(progress.stars)?Math.max(0,progress.stars):0;progress.finished=Number.isFinite(progress.finished)?Math.max(0,progress.finished):0;progress.dates=Array.isArray(progress.dates)?progress.dates:[];progress.daily=progress.daily&&typeof progress.daily==='object'?progress.daily:{};
 let game=null,gameState=null,gameId=0,finished=false,dailyMode=false,run=0;
+let cleanupTasks=[];
+function onCleanup(fn){cleanupTasks.push(fn)}
+function leaveGame(){gameId++;run=gameId;for(const fn of cleanupTasks.splice(0))fn()}
+function gameTimeout(fn,delay){const token=run;const id=setTimeout(()=>{if(token===run)fn()},delay);onCleanup(()=>clearTimeout(id));return id}
+function stopInputs(){document.querySelectorAll('#board button,#board input,#gameControls button,#gameControls select,#gameControls input').forEach(el=>el.disabled=true)}
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const rnd=n=>Math.floor(Math.random()*n);
 const clean=()=>{document.querySelector('#mergeMoveExplanation')?.remove();board.removeAttribute('style');board.removeAttribute('aria-label');board.innerHTML='';controls.innerHTML='';feedback.textContent='';status.textContent='';$('#winMessage').classList.add('hidden');board.className='board'};
 const btn=(text,fn,parent=controls)=>{let b=document.createElement('button');b.className='action';b.textContent=text;b.onclick=fn;parent.appendChild(b);return b};
-function save(){localStorage.setItem(storeKey,JSON.stringify(progress));$('#stars').textContent=progress.stars;$('#completed').textContent=progress.finished;$('#days').textContent=progress.dates.length;renderDaily()}
+function save(){try{localStorage.setItem(storeKey,JSON.stringify(progress))}catch{}$('#stars').textContent=progress.stars;$('#completed').textContent=progress.finished;$('#days').textContent=progress.dates.length;renderDaily()}
 function dailyGame(){const date=today();let hash=[...date].reduce((a,c)=>a*31+c.charCodeAt(0),0);return ['memory','tictac','sequence','lights','twenty'][Math.abs(hash)%5]}
 function renderDaily(){const d=today(),done=!!progress.daily[d];$('#dailyBadge').textContent=done?'✓ Completed today':'Available today';$('#dailyDescription').textContent=(done?'Nicely done! You can replay whenever you want. ':'Today’s pick: '+keys[dailyGame()]+'. ')+'No penalty for missing a day.';$('#dailyStart').textContent=done?'Play it again':'Try daily challenge'}
-function win(stars=5,note='Challenge complete!'){if(finished)return;finished=true;progress.stars+=stars;progress.finished++;if(!progress.dates.includes(today()))progress.dates.push(today());if(dailyMode&&!progress.daily[today()]){progress.daily[today()]=true;progress.stars+=5;note+=' Daily challenge bonus: 5 stars!'}save();feedback.textContent='🎉 '+note+' +'+stars+' stars';btn('Play again',()=>open(game,dailyMode));btn('Explore games',home)}
+function win(stars=5,note='Challenge complete!'){if(finished)return;finished=true;stopInputs();progress.stars+=stars;progress.finished++;if(!progress.dates.includes(today()))progress.dates.push(today());if(dailyMode&&!progress.daily[today()]){progress.daily[today()]=true;progress.stars+=5;note+=' Daily challenge bonus: 5 stars!'}save();feedback.textContent='🎉 '+note+' +'+stars+' stars';btn('Play again',()=>open(game,dailyMode));btn('Explore games',home)}
 function makeBoard(c,klass=''){board.className='board '+klass;c.forEach((v,i)=>{let b=document.createElement('button');b.textContent=v;b.dataset.index=i;board.appendChild(b)});return [...board.children]}
-function home(){gameId++;game=null;$('#play').classList.add('hidden');$('#catalog').classList.remove('hidden');document.body.dataset.mode='home'}
-function open(name,asDaily=false){gameId++;run=gameId;game=name;dailyMode=asDaily;finished=false;clean();$('#play').classList.remove('hidden');$('#catalog').classList.add('hidden');document.body.dataset.mode='playing';$('#gameTitle').textContent=keys[name];$('#genre').textContent=asDaily?'☀️ Daily Challenge':'🎮 Free Play';$('#instructions').textContent='Need help? Use the visual example below or the ⓘ Info button.';updateQuickGuide(name);$('#play').scrollIntoView({block:'start',behavior:'smooth'});({bubbles,tictac,memory,sequence,lights,twenty,connect,recall,focus,code,slider,higher,...extraGames}[name])()}
+function home(){leaveGame();game=null;clean();$('#play').classList.add('hidden');$('#catalog').classList.remove('hidden');document.body.dataset.mode='home'}
+function open(name,asDaily=false){if(!keys[name])return;leaveGame();game=name;dailyMode=asDaily;finished=false;clean();$('#play').classList.remove('hidden');$('#catalog').classList.add('hidden');document.body.dataset.mode='playing';$('#gameTitle').textContent=keys[name];$('#genre').textContent=asDaily?'☀️ Daily Challenge':'🎮 Free Play';$('#instructions').textContent='Need help? Use the visual example below or the ⓘ Info button.';updateQuickGuide(name);$('#play').scrollIntoView({block:'start',behavior:'instant'});({bubbles,tictac,memory,sequence,lights,twenty,connect,recall,focus,code,slider,higher,...extraGames}[name])()}
 document.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>open(el.dataset.game));
-$('#back').onclick=home;$('#dailyStart').onclick=()=>open(dailyGame(),true);$('#dailyButton').onclick=()=>open(dailyGame(),true);
+$('#back').onclick=home;$('#restart').onclick=()=>{if(game)open(game,dailyMode)};$('#dailyStart').onclick=()=>open(dailyGame(),true);$('#dailyButton').onclick=()=>open(dailyGame(),true);
 async function api(path,obj){let r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});let v=await r.json();if(!r.ok)throw Error(v.error||'Request failed');return v}
 async function bubbles(){
  board.classList.add('bubbles');
@@ -74,12 +80,12 @@ async function bubbles(){
 function tictac(){let a=Array(9).fill(''),over=false;const bs=makeBoard(a,'tictac');function winner(p){const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];return lines.some(l=>l.every(i=>p[i]==='X'))?'X':lines.some(l=>l.every(i=>p[i]==='O'))?'O':p.every(Boolean)?'tie':null}
 function minimax(p,turn,depth=0){const w=winner(p);if(w)return {score:w==='O'?10-depth:w==='X'?depth-10:0};let best={score:turn==='O'?-Infinity:Infinity,index:-1};for(let i=0;i<9;i++)if(!p[i]){p[i]=turn;const score=minimax(p,turn==='O'?'X':'O',depth+1).score;p[i]='';if(turn==='O'?score>best.score:score<best.score)best={score,index:i}}return best}
 function refresh(){bs.forEach((b,i)=>{b.textContent=a[i]||'·';b.disabled=!!a[i]||over})}
-function check(){let w=winner(a);if(!w)return false;over=true;refresh();if(w==='X')win(15,'You outsmarted the computer!');else{feedback.textContent=w==='tie'?'A hard-fought draw!':'The computer wins this round. Try another tactic!';btn('Play again',()=>open('tictac'))}return true}
+function check(){let w=winner(a);if(!w)return false;over=true;refresh();if(w==='X')win(15,'You outsmarted the computer!');else{finished=true;stopInputs();feedback.textContent=w==='tie'?'A hard-fought draw!':'The computer wins this round. Try another tactic!';btn('Play again',()=>open('tictac'))}return true}
 bs.forEach((b,i)=>b.onclick=()=>{if(a[i]||over)return;a[i]='X';refresh();if(check())return;let next=Math.random()<0.72?minimax(a,'O').index:shuffle(a.map((v,i)=>v?-1:i).filter(i=>i>=0))[0];if(next>=0)a[next]='O';refresh();check()});refresh()}
-function memory(){let icons=['🌈','🧩','🍀','⭐','🐬','🎈','🚀','💜'],deck=shuffle([...icons,...icons]),revealed=[],matched=new Set(),moves=0,busy=false;const bs=makeBoard(Array(16).fill('❔'),'memory');status.textContent='Pairs found: 0 / 8 • Attempts: 0';bs.forEach((b,i)=>b.onclick=()=>{if(busy||matched.has(i)||revealed.includes(i))return;b.textContent=deck[i];revealed.push(i);if(revealed.length===2){moves++;const [x,y]=revealed;if(deck[x]===deck[y]){matched.add(x);matched.add(y);bs[x].classList.add('matched');bs[y].classList.add('matched');revealed=[];if(matched.size===16)win(Math.max(5,25-Math.max(0,moves-8)),'All eight pairs found in '+moves+' attempts!')}else{busy=true;let token=run;setTimeout(()=>{if(token!==run)return;bs[x].textContent='❔';bs[y].textContent='❔';revealed=[];busy=false},800)}}status.textContent='Pairs found: '+matched.size/2+' / 8 • Attempts: '+moves})}
+function memory(){let icons=['🌈','🧩','🍀','⭐','🐬','🎈','🚀','💜'],deck=shuffle([...icons,...icons]),revealed=[],matched=new Set(),moves=0,busy=false;const bs=makeBoard(Array(16).fill('❔'),'memory');status.textContent='Pairs found: 0 / 8 • Attempts: 0';bs.forEach((b,i)=>b.onclick=()=>{if(finished||busy||matched.has(i)||revealed.includes(i))return;b.textContent=deck[i];revealed.push(i);if(revealed.length===2){moves++;const [x,y]=revealed;if(deck[x]===deck[y]){matched.add(x);matched.add(y);bs[x].classList.add('matched');bs[y].classList.add('matched');revealed=[];if(matched.size===16)win(Math.max(5,25-Math.max(0,moves-8)),'All eight pairs found in '+moves+' attempts!')}else{busy=true;let token=run;gameTimeout(()=>{if(token!==run)return;bs[x].textContent='❔';bs[y].textContent='❔';revealed=[];busy=false},800)}}status.textContent='Pairs found: '+matched.size/2+' / 8 • Attempts: '+moves})}
 function sequence(){status.textContent='Read the rules above first.';feedback.textContent='Ready when you are.';btn('Start pattern challenge',runSequence)}
-function runSequence(){controls.innerHTML='';let pattern=[],pos=0,accept=false,level=0;const colors=['🔴','🔵','🟢','🟡'],bs=makeBoard(colors,'sequence');function next(){if(game!=='sequence')return;accept=false;pos=0;pattern.push(rnd(4));level++;status.textContent='Level '+level+' / 5';feedback.textContent='Watch the pattern...';let token=run;bs.forEach(b=>b.disabled=true);pattern.forEach((n,i)=>{setTimeout(()=>{if(token!==run)return;bs[n].classList.add('on')},500+i*750);setTimeout(()=>{if(token!==run)return;bs[n].classList.remove('on');if(i===pattern.length-1){accept=true;bs.forEach(b=>b.disabled=false);feedback.textContent='Your turn: repeat '+pattern.length+' colors'}},900+i*750)})}bs.forEach((b,i)=>b.onclick=()=>{if(!accept)return;if(i!==pattern[pos]){accept=false;feedback.textContent='Not quite! Restart and try a new pattern.';btn('Try again',()=>open('sequence'));return}pos++;if(pos===pattern.length){accept=false;bs.forEach(x=>x.disabled=true);if(level>=5)win(20,'You remembered five levels!');else{feedback.textContent='Great memory!';setTimeout(()=>{if(game==='sequence'&&run===gameId)next()},800)}}});next()}
-function lights(){let cells=Array(16).fill(false);const adj=i=>[i,i-4,i+4,...(i%4?[i-1]:[]),...(i%4<3?[i+1]:[])].filter(j=>j>=0&&j<16);function toggle(i){adj(i).forEach(j=>cells[j]=!cells[j])}for(let k=0;k<8;k++)toggle(rnd(16));if(!cells.some(Boolean))toggle(5);let moves=0;const bs=makeBoard(Array(16).fill(''),'lights');function show(){bs.forEach((b,i)=>{b.textContent=cells[i]?'💡':'·';b.classList.toggle('on',cells[i]);b.disabled=finished});status.textContent='Moves: '+moves+' • Lights on: '+cells.filter(Boolean).length}bs.forEach((b,i)=>b.onclick=()=>{toggle(i);moves++;show();if(!cells.some(Boolean))win(Math.max(5,35-moves),'All lights switched off in '+moves+' moves!')});show()}
+function runSequence(){const sequenceToken=run;controls.innerHTML='';let pattern=[],pos=0,accept=false,level=0;const colors=['🔴','🔵','🟢','🟡'],bs=makeBoard(colors,'sequence');function next(){if(game!=='sequence')return;accept=false;pos=0;pattern.push(rnd(4));level++;status.textContent='Level '+level+' / 5';feedback.textContent='Watch the pattern...';let token=run;bs.forEach(b=>b.disabled=true);pattern.forEach((n,i)=>{gameTimeout(()=>{if(token!==run)return;bs[n].classList.add('on')},500+i*750);gameTimeout(()=>{if(token!==run)return;bs[n].classList.remove('on');if(i===pattern.length-1){accept=true;bs.forEach(b=>b.disabled=false);feedback.textContent='Your turn: repeat '+pattern.length+' colors'}},900+i*750)})}bs.forEach((b,i)=>b.onclick=()=>{if(!accept)return;if(i!==pattern[pos]){accept=false;finished=true;stopInputs();feedback.textContent='Not quite! Restart and try a new pattern.';btn('Try again',()=>open('sequence'));return}pos++;if(pos===pattern.length){accept=false;bs.forEach(x=>x.disabled=true);if(level>=5)win(20,'You remembered five levels!');else{feedback.textContent='Great memory!';gameTimeout(()=>{if(game==='sequence'&&run===sequenceToken)next()},800)}}});next()}
+function lights(){let cells=Array(16).fill(false);const adj=i=>[i,i-4,i+4,...(i%4?[i-1]:[]),...(i%4<3?[i+1]:[])].filter(j=>j>=0&&j<16);function toggle(i){adj(i).forEach(j=>cells[j]=!cells[j])}for(let k=0;k<8;k++)toggle(rnd(16));if(!cells.some(Boolean))toggle(5);let moves=0;const bs=makeBoard(Array(16).fill(''),'lights');function show(){bs.forEach((b,i)=>{b.textContent=cells[i]?'💡':'·';b.classList.toggle('on',cells[i]);b.disabled=finished});status.textContent='Moves: '+moves+' • Lights on: '+cells.filter(Boolean).length}bs.forEach((b,i)=>b.onclick=()=>{if(finished)return;toggle(i);moves++;show();if(!cells.some(Boolean))win(Math.max(5,35-moves),'All lights switched off in '+moves+' moves!')});show()}
 function twenty(){
  let a=Array(16).fill(0),score=0,locked=false,moves=0;
  const bs=makeBoard(a,'twenty');
@@ -144,11 +150,11 @@ function twenty(){
    locked=true;
    feedback.textContent='No moves left. Final score: '+score;
    if(score>=256)win(10,'You reached 256+ points before the board filled!');
-   else btn('Try again',()=>open('twenty'));
+   else {finished=true;stopInputs();btn('Try again',()=>open('twenty'));}
   }
  }
- const controller=twentyController();
- const touchController=twentyTouchController();
+ const controller=twentyController();onCleanup(()=>controller.abort());
+ const touchController=twentyTouchController();onCleanup(()=>touchController.abort());
  btn('↑ Move all tiles UP',()=>move('up'));
  btn('← Move all tiles LEFT',()=>move('left'));
  btn('↓ Move all tiles DOWN',()=>move('down'));
@@ -174,18 +180,17 @@ save();home();
 function connect(){
  const rows=6,cols=7,a=Array(42).fill(''),buttons=makeBoard(Array(7).fill('↓'),'bubbles');
  board.style.maxWidth='530px';board.style.gridTemplateColumns='repeat(7,1fr)';
- const cells=document.createElement('div');cells.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:12px auto;max-width:530px';
+ const cells=document.createElement('div');cells.className='connect-grid';cells.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:12px auto;max-width:530px';
  board.after(cells);
- const token=run,remove=()=>cells.remove();const oldClean=clean;
- function draw(){cells.innerHTML='';a.forEach(v=>{const x=document.createElement('span');x.textContent=v==='P'?'🔵':v==='C'?'🟣':'⚪';x.style.cssText='text-align:center;font-size:clamp(19px,4vw,32px)';cells.appendChild(x)})}
+ onCleanup(()=>cells.remove());
+ function draw(){buttons.forEach((b,c)=>{b.disabled=over||!!a[c];b.setAttribute('aria-label','Drop token in column '+(c+1))});cells.innerHTML='';a.forEach(v=>{const x=document.createElement('span');x.textContent=v==='P'?'🔵':v==='C'?'🟣':'⚪';x.style.cssText='text-align:center;font-size:clamp(19px,4vw,32px)';cells.appendChild(x)})}
  function drop(c,p){for(let r=rows-1;r>=0;r--){let i=r*cols+c;if(!a[i]){a[i]=p;return i}}return -1}
  function winning(p){let directions=[[0,1],[1,0],[1,1],[1,-1]];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)for(const [dr,dc] of directions){let yes=true;for(let n=0;n<4;n++){let rr=r+dr*n,cc=c+dc*n;if(rr<0||rr>=rows||cc<0||cc>=cols||a[rr*cols+cc]!==p){yes=false;break}}if(yes)return true}return false}
  let over=false;
- const check=p=>{if(winning(p)){over=true;buttons.forEach(b=>b.disabled=true);if(p==='P')win(20,'Four in a row!');else{feedback.textContent='Computer connected four first.';btn('Try again',()=>open('connect'))}return true}if(a.every(Boolean)){over=true;feedback.textContent='It is a draw!';btn('Play again',()=>open('connect'));return true}return false};
+ const check=p=>{if(winning(p)){over=true;buttons.forEach(b=>b.disabled=true);if(p==='P')win(20,'Four in a row!');else{finished=true;stopInputs();feedback.textContent='Computer connected four first.';btn('Try again',()=>open('connect'))}return true}if(a.every(Boolean)){over=true;finished=true;stopInputs();feedback.textContent='It is a draw!';btn('Play again',()=>open('connect'));return true}return false};
  function cpu(){if(over||game!=='connect')return;const available=[0,1,2,3,4,5,6].filter(c=>!a[c]);const findWin=p=>available.find(c=>{let i=drop(c,p),w=winning(p);a[i]='';return w});let col=findWin('C')??findWin('P')??[3,2,4,1,5,0,6].find(c=>available.includes(c));drop(col,'C');draw();check('C')}
  buttons.forEach((b,c)=>b.onclick=()=>{if(over||a[c])return;drop(c,'P');draw();if(!check('P'))cpu()});draw();
- // Remove appended board when switching games, without changing the shared game lifecycle.
- const watch=new MutationObserver(()=>{if(run!==token){remove();watch.disconnect();board.style.maxWidth='430px';board.style.gridTemplateColumns=''}});watch.observe($('#play'),{attributes:true,subtree:true,childList:true});
+
 }
 function recall(){status.textContent='Read the rules above first.';feedback.textContent='You will have six seconds to memorize five words.';btn('Show the five words',runRecall)}
 function runRecall(){controls.innerHTML='';
@@ -194,23 +199,24 @@ function runRecall(){controls.innerHTML='';
  const token=run;status.textContent='Memorize these five words:';board.className='board';board.innerHTML='';
  const display=document.createElement('h2');display.style.textAlign='center';display.textContent=chosen.join(' · ');board.appendChild(display);
  feedback.textContent='Words will hide in 6 seconds.';
- setTimeout(()=>{if(token!==run)return;board.innerHTML='';status.textContent='Select the five words you just saw:';feedback.textContent='0 / 5 selected';let picked=new Set();board.className='board memory';
- options.forEach(word=>{let b=document.createElement('button');b.textContent=word;b.style.fontSize='14px';b.onclick=()=>{if(picked.has(word)){picked.delete(word);b.classList.remove('on')}else{picked.add(word);b.classList.add('on')}feedback.textContent=picked.size+' / 5 selected';if(picked.size===5){const n=[...picked].filter(w=>chosen.includes(w)).length;if(n===5)win(18,'Perfect word recall!');else{feedback.textContent='You remembered '+n+' of 5 words.';btn('Try again',()=>open('recall'));board.querySelectorAll('button').forEach(x=>x.disabled=true)}}};board.appendChild(b)})},6000)
+ gameTimeout(()=>{if(token!==run)return;board.innerHTML='';status.textContent='Select the five words you just saw:';feedback.textContent='0 / 5 selected';let picked=new Set();board.className='board memory';
+ options.forEach(word=>{let b=document.createElement('button');b.textContent=word;b.style.fontSize='14px';b.onclick=()=>{if(finished)return;if(picked.has(word)){picked.delete(word);b.classList.remove('on')}else{picked.add(word);b.classList.add('on')}feedback.textContent=picked.size+' / 5 selected';if(picked.size===5){const n=[...picked].filter(w=>chosen.includes(w)).length;if(n===5)win(18,'Perfect word recall!');else{finished=true;stopInputs();feedback.textContent='You remembered '+n+' of 5 words.';btn('Try again',()=>open('recall'));board.querySelectorAll('button').forEach(x=>x.disabled=true)}}};board.appendChild(b)})},6000)
 }
 function focus(){
  const nums=shuffle(Array.from({length:16},(_,i)=>i+1));let next=1;
- const bs=makeBoard(nums,'lights');status.textContent='Next number: 1';bs.forEach((b,i)=>{b.textContent=nums[i];b.onclick=()=>{if(nums[i]!==next){feedback.textContent='Find '+next+' first. Follow the numbers in ascending order.';return}feedback.textContent='Great! Keep going.';b.disabled=true;b.classList.add('matched');b.textContent='✓';next++;status.textContent=next<=16?'Next number: '+next:'All found!';if(next===17)win(20,'All numbers found in order!')}})
+ const bs=makeBoard(nums,'lights');status.textContent='Next number: 1';bs.forEach((b,i)=>{b.textContent=nums[i];b.onclick=()=>{if(finished)return;if(nums[i]!==next){feedback.textContent='Find '+next+' first. Follow the numbers in ascending order.';return}feedback.textContent='Great! Keep going.';b.disabled=true;b.classList.add('matched');b.textContent='✓';next++;status.textContent=next<=16?'Next number: '+next:'All found!';if(next===17)win(20,'All numbers found in order!')}})
 }
 function code(){
  const target=Array.from({length:3},()=>rnd(5));let turn=0;
  status.textContent='Guess 1 / 6';const guesses=document.createElement('div');guesses.style.cssText='margin:16px 0;line-height:1.9';board.appendChild(guesses);
  const fields=Array.from({length:3},()=>{const el=document.createElement('select');el.style.cssText='font-size:22px;padding:12px;margin:5px';for(let d=0;d<=4;d++){let option=document.createElement('option');option.value=d;option.textContent=d;el.appendChild(option)}controls.appendChild(el);return el});
- const submit=btn('Check code',()=>{if(finished||turn>=6)return;const guess=fields.map(el=>Number(el.value)),exact=guess.filter((v,i)=>v===target[i]).length;let freqG=Array(5).fill(0),freqT=Array(5).fill(0);guess.forEach(v=>freqG[v]++);target.forEach(v=>freqT[v]++);const common=freqG.reduce((sum,v,i)=>sum+Math.min(v,freqT[i]),0);turn++;let item=document.createElement('div');item.textContent=guess.join(' - ')+' → '+exact+' exact, '+(common-exact)+' right digit/wrong place';guesses.appendChild(item);status.textContent='Guess '+Math.min(turn+1,6)+' / 6';if(exact===3){submit.disabled=true;win(Math.max(8,25-turn*2),'Code cracked in '+turn+' guesses!')}else if(turn>=6){submit.disabled=true;feedback.textContent='The code was '+target.join('-')+'.';btn('Try again',()=>open('code'))}});
+ const submit=btn('Check code',()=>{if(finished||turn>=6)return;const guess=fields.map(el=>Number(el.value)),exact=guess.filter((v,i)=>v===target[i]).length;let freqG=Array(5).fill(0),freqT=Array(5).fill(0);guess.forEach(v=>freqG[v]++);target.forEach(v=>freqT[v]++);const common=freqG.reduce((sum,v,i)=>sum+Math.min(v,freqT[i]),0);turn++;let item=document.createElement('div');item.textContent=guess.join(' - ')+' → '+exact+' exact, '+(common-exact)+' right digit/wrong place';guesses.appendChild(item);status.textContent='Guess '+Math.min(turn+1,6)+' / 6';if(exact===3){submit.disabled=true;win(Math.max(8,25-turn*2),'Code cracked in '+turn+' guesses!')}else if(turn>=6){finished=true;stopInputs();submit.disabled=true;feedback.textContent='The code was '+target.join('-')+'.';btn('Try again',()=>open('code'))}});
  board.className='board';
 }
 function slider(){
  let a=[1,2,3,4,5,6,7,8,0],previous=-1;
  for(let j=0;j<80;j++){let zero=a.indexOf(0),choices=[zero-3,zero+3,...(zero%3?[zero-1]:[]),...(zero%3<2?[zero+1]:[])].filter(i=>i>=0&&i<9&&i!==previous);let to=choices[rnd(choices.length)];[a[zero],a[to]]=[a[to],a[zero]];previous=zero}
+ if(a.every((v,j)=>v===(j+1)%9))[a[7],a[8]]=[a[8],a[7]];
  const bs=makeBoard(a,'tictac');let moves=0;
  function draw(){bs.forEach((b,i)=>{b.textContent=a[i]||' ';b.dataset.number=a[i]||0});status.textContent='Moves: '+moves}
  bs.forEach((b,i)=>b.onclick=()=>{if(finished)return;let z=a.indexOf(0);if(!((Math.abs(z-i)===3)||(Math.floor(z/3)===Math.floor(i/3)&&Math.abs(z-i)===1)))return;[a[z],a[i]]=[a[i],a[z]];moves++;draw();if(a.every((v,j)=>v===(j+1)%9))win(Math.max(7,32-Math.floor(moves/3)),'Tiles solved in '+moves+' moves!')});draw()
@@ -219,7 +225,7 @@ function higher(){
  let current=rnd(10)+1,turn=1,correct=0;
  board.className='board sequence';const buttons=makeBoard(['⬆️ HIGHER','⬇️ LOWER'],'sequence');
  function draw(){status.textContent='Round '+turn+' / 5 • '+correct+' correct';feedback.textContent='Current number: '+current+' (1–10). What comes next?'}
- let waiting=false;buttons.forEach((b,i)=>b.onclick=()=>{if(finished||waiting)return;waiting=true;buttons.forEach(x=>x.disabled=true);const next=rnd(10)+1;const right=i===0?next>current:next<current;if(right)correct++;feedback.textContent='Next number: '+next+'. '+(right?'✓ Good guess!':'Not quite (ties count as incorrect).');current=next;if(turn>=5){win(5+correct*2,'You guessed '+correct+' out of 5 correctly!');return}turn++;status.textContent='Round '+turn+' / 5 • '+correct+' correct';const token=run;setTimeout(()=>{if(game!=='higher'||run!==token)return;waiting=false;buttons.forEach(x=>x.disabled=false);draw()},1100)});draw()
+ let waiting=false;buttons.forEach((b,i)=>b.onclick=()=>{if(finished||waiting)return;waiting=true;buttons.forEach(x=>x.disabled=true);const next=rnd(10)+1;const right=i===0?next>current:next<current;if(right)correct++;feedback.textContent='Next number: '+next+'. '+(right?'✓ Good guess!':'Not quite (ties count as incorrect).');current=next;if(turn>=5){win(5+correct*2,'You guessed '+correct+' out of 5 correctly!');return}turn++;status.textContent='Round '+turn+' / 5 • '+correct+' correct';const token=run;gameTimeout(()=>{if(game!=='higher'||run!==token)return;waiting=false;buttons.forEach(x=>x.disabled=false);draw()},1100)});draw()
 }
 
 

@@ -1,6 +1,11 @@
 package com.aquaemoticons.arcade;
 
 import android.graphics.Bitmap;
+import android.app.Instrumentation;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.SystemClock;
+import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import androidx.test.core.app.ActivityScenario;
@@ -13,6 +18,7 @@ import java.io.FileOutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.json.JSONArray;
 import static org.junit.Assert.*;
 
 /** Runs against the real packaged WebView with no Internet permission. */
@@ -49,6 +55,37 @@ public final class OfflineArcadeTest {
             assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, out));
         } finally { bitmap.recycle(); }
     }
+    private void storeLinkOpensBrowser(ActivityScenario<MainActivity> scene) throws Exception {
+        assertEquals("\"https://aquaemoticons.com\"", js(scene, "document.querySelector('#shopStoreLink').getAttribute('href')"));
+        JSONArray rect = new JSONArray(js(scene, "(()=>{const r=document.querySelector('#shopStoreLink').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
+        int[] origin = new int[2];
+        AtomicReference<Integer> width = new AtomicReference<>();
+        scene.onActivity(activity -> {
+            ViewGroup content = activity.findViewById(android.R.id.content);
+            WebView view = (WebView) content.getChildAt(0);
+            view.getLocationOnScreen(origin);
+            origin[0] += view.getPaddingLeft(); origin[1] += view.getPaddingTop();
+            width.set(view.getWidth() - view.getPaddingLeft() - view.getPaddingRight());
+        });
+        float scale = width.get() / (float) rect.getDouble(2);
+        float x = origin[0] + (float) rect.getDouble(0) * scale;
+        float y = origin[1] + (float) rect.getDouble(1) * scale;
+        Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_VIEW);
+        filter.addDataScheme("https"); filter.addDataAuthority("aquaemoticons.com", null);
+        Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(filter, null, true);
+        try {
+            long down = SystemClock.uptimeMillis();
+            MotionEvent press = MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, x, y, 0);
+            instrumentation.sendPointerSync(press); press.recycle();
+            Thread.sleep(80);
+            MotionEvent release = MotionEvent.obtain(down, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y, 0);
+            instrumentation.sendPointerSync(release); release.recycle();
+            long until = SystemClock.uptimeMillis() + 3000;
+            while (monitor.getHits() == 0 && SystemClock.uptimeMillis() < until) Thread.sleep(50);
+            assertEquals("Store link must open the external browser for the correct store", 1, monitor.getHits());
+        } finally { instrumentation.removeMonitor(monitor); }
+    }
     @Test public void offlineGamesProgressLanguagesAndScreenshots() throws Exception {
         try (ActivityScenario<MainActivity> scene = ActivityScenario.launch(MainActivity.class)) {
             ready(scene);
@@ -58,6 +95,7 @@ public final class OfflineArcadeTest {
             ready(scene);
             js(scene, "window.__arcadeErrors=[]; window.addEventListener('error',e=>window.__arcadeErrors.push(e.message)); if(document.documentElement.dataset.theme==='dark')document.querySelector('#themeToggle').click(); home(); window.scrollTo(0,0);");
             screenshot("01-home-en");
+            storeLinkOpensBrowser(scene);
             // Open every real bundled game, including those below the initial library page.
             String ids = js(scene, "Object.keys(keys).join(',')").replace("\"", "");
             assertEquals(36, ids.split(",").length);

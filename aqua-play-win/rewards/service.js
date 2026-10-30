@@ -1,7 +1,7 @@
 import {randomBytes,randomInt,randomUUID,createHash,createHmac,timingSafeEqual} from 'node:crypto';
-import {POLICY,dayKey,priorDay,weekKey,eligibility,ineligibleGames} from './policy.js';
+import {POLICY,REWARD_PRODUCTS,dayKey,priorDay,weekKey,eligibility,ineligibleGames} from './policy.js';
 import {verifyReplay} from './replay.js';
-import {ShopifyRewards} from './shopify.js';
+import {ShopifyRewards,hasShopifyCredentials} from './shopify.js';
 const hash=s=>createHash('sha256').update(s).digest('hex');
 const token=()=>randomBytes(32).toString('base64url');
 export function verifyProxy(params,env,now=Date.now()) {
@@ -18,9 +18,15 @@ export function discountInput(claim,now=new Date()) {
  const common={title:'Aqua Arcade '+claim.reward_id,code:claim.code,context:{customers:{add:[claim.customer_gid]}},
   startsAt:now.toISOString(),endsAt:new Date(now.getTime()+POLICY.expiryHours*3600000).toISOString(),usageLimit:1,appliesOncePerCustomer:true,
   combinesWith:{orderDiscounts:false,productDiscounts:false,shippingDiscounts:false}};
- if(claim.reward_id==='bathbomb')return {...common,customerGets:{items:{products:{productVariantsToAdd:[claim.variant_gid]}},value:{discountAmount:{amount:claim.amount,appliesOnEachItem:false}}}};
- const r=POLICY.rewards.find(r=>r.id===claim.reward_id);if(!r?.percent)throw Error('Unknown coupon');
- return {...common,customerGets:{items:{all:true},value:{percentage:r.percent/100}},minimumRequirement:{subtotal:{greaterThanOrEqualToSubtotal:POLICY.minimumPurchase}}};
+ const items={products:{productVariantsToAdd:REWARD_PRODUCTS.map(p=>p.id)}};
+ if(claim.reward_id==='bathbomb'){
+  if(!REWARD_PRODUCTS.some(p=>p.id===claim.variant_gid))throw Error('Gift product is not approved');
+  return {...common,usesPerOrderLimit:1,
+   customerBuys:{items,value:{quantity:String(POLICY.giftBuyQuantity)},isOneTimePurchase:true,isSubscription:false},
+   customerGets:{items:{products:{productVariantsToAdd:[claim.variant_gid]}},appliesOnOneTimePurchase:true,appliesOnSubscription:false,value:{discountOnQuantity:{quantity:'1',effect:{percentage:1}}}}};
+ }
+ const r=POLICY.rewards.find(r=>r.id===claim.reward_id);if(!r?.amount)throw Error('Unknown coupon');
+ return {...common,customerGets:{items,appliesOnOneTimePurchase:true,appliesOnSubscription:false,value:{discountAmount:{amount:r.amount,appliesOnEachItem:false}}},minimumRequirement:{subtotal:{greaterThanOrEqualToSubtotal:r.minimumPurchase}}};
 }
 export class RewardsService {
  constructor(pool,env=process.env,{shopify=new ShopifyRewards(env),verify=verifyReplay,clock=()=>new Date()}={}){this.pool=pool;this.env=env;this.shopify=shopify;this.verify=verify;this.clock=clock}
@@ -77,10 +83,11 @@ export class RewardsService {
    return {credited:true,earned};
   });
  }
- enabled(){return this.env.ARCADE_REWARDS_ENABLED==='true'&&this.env.ARCADE_PROMOTION_TERMS_APPROVED==='true'&&!!this.env.SHOPIFY_ADMIN_ACCESS_TOKEN}
+ enabled(){return this.env.ARCADE_REWARDS_ENABLED==='true'&&this.env.ARCADE_PROMOTION_TERMS_APPROVED==='true'&&hasShopifyCredentials(this.env)}
  async reserve(gid,rewardId){
   if(!this.enabled())throw Error('Coupon and gift redemption is not activated');
   const reward=POLICY.rewards.find(r=>r.id===rewardId);if(!reward)throw Error('Unknown reward');
+  await this.shopify.reviewEconomics({reward_id:rewardId});
   return this.tx(async c=>{
    await c.query('SELECT pg_advisory_xact_lock(20261030)');
    const a=(await c.query('SELECT * FROM arcade_accounts WHERE customer_gid=$1 FOR UPDATE',[gid])).rows[0];
@@ -88,7 +95,7 @@ export class RewardsService {
    if(week){const existing=(await c.query('SELECT * FROM arcade_claims WHERE customer_gid=$1 AND week=$2',[gid,week])).rows[0];if(existing){if(existing.reward_id!==rewardId)throw Error('Weekly claim limit reached');return existing}}
    if(reward.approval&&(await c.query("SELECT id FROM arcade_claims WHERE customer_gid=$1 AND reward_id='bathbomb' AND status<>'rejected'",[gid])).rowCount)throw Error('Gift request already exists');
    if(!eligibility(a,reward))throw Error('Not enough verified points, wins, or days');
-   if(week){const cap=Number(this.env.MAX_COUPONS_PER_WEEK||20);if(!Number.isInteger(cap)||cap<1)throw Error('Program limits are not configured correctly');
+   if(week){const cap=Number(this.env.MAX_COUPONS_PER_WEEK||10);if(!Number.isInteger(cap)||cap<1)throw Error('Program limits are not configured correctly');
     const reserved=(await c.query("SELECT count(*)::int AS n FROM arcade_claims WHERE week=$1 AND status IN ('approved','issuing','issued')",[week])).rows[0].n;
     if(reserved>=cap)throw Error('Program weekly limit reached. Your points were not spent');}
 
@@ -121,12 +128,12 @@ export class RewardsService {
     // Recheck stock/price immediately before issuance; never charge more than one current unit.
     const gift=await this.shopify.gift(r.variant_gid);r.amount=gift.amount;
     const monthly=(await c.query("SELECT count(*)::int AS n FROM arcade_claims WHERE reward_id='bathbomb' AND status IN ('issuing','issued') AND issuance_at>now()-interval '30 days'")).rows[0].n;
-    if(monthly>=Number(this.env.MAX_GIFTS_PER_30_DAYS||5))throw Error('Gift program limit reached');
+    if(monthly>=Number(this.env.MAX_GIFTS_PER_30_DAYS||3))throw Error('Gift program limit reached');
    }
-   const capacity=Number(this.env.MAX_COUPONS_PER_WEEK||20),giftCapacity=Number(this.env.MAX_GIFTS_PER_30_DAYS||5);
+   const capacity=Number(this.env.MAX_COUPONS_PER_WEEK||10),giftCapacity=Number(this.env.MAX_GIFTS_PER_30_DAYS||3);
    if(!Number.isInteger(capacity)||capacity<1||!Number.isInteger(giftCapacity)||giftCapacity<1)throw Error('Program limits are not configured correctly');
    const count=(await c.query("SELECT count(*)::int AS n FROM arcade_claims WHERE week=$1 AND id<>$2 AND status IN ('approved','issuing','issued')",[week,id])).rows[0].n;
-   if(count>=Number(this.env.MAX_COUPONS_PER_WEEK||20))throw Error('Program weekly limit reached');
+   if(count>=Number(this.env.MAX_COUPONS_PER_WEEK||10))throw Error('Program weekly limit reached');
    const code='AQUA-'+randomBytes(16).toString('hex').toUpperCase();r={...r,code};
    const input=discountInput(r,this.clock());
    r=(await c.query("UPDATE arcade_claims SET week=$2,status='issuing',issuance_at=now(),code=$3,expires_at=$4,shopify_input=$5,amount=$6 WHERE id=$1 RETURNING *",[id,week,code,input.endsAt,JSON.stringify(input),r.amount])).rows[0];return r;

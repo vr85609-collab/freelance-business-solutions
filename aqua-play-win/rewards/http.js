@@ -1,7 +1,7 @@
 import {timingSafeEqual} from 'node:crypto';
 import pg from 'pg';
 import {RewardsService} from './service.js';
-import {POLICY} from './policy.js';
+import {POLICY,REWARD_PRODUCTS} from './policy.js';
 const COOKIE='__Host-aqua-session',LOGIN='__Host-aqua-login';
 const cookies=req=>Object.fromEntries((req.headers.cookie||'').split(';').map(s=>s.trim().split('=')));
 const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
@@ -37,7 +37,7 @@ export function createRewardsHandler(env=process.env){
    if(isAdmin){
     const actual=Buffer.from(req.headers.authorization||''),expected=Buffer.from('Bearer '+(env.ARCADE_ADMIN_TOKEN||''));
     if((env.ARCADE_ADMIN_TOKEN||'').length<32||actual.length!==expected.length||!timingSafeEqual(actual,expected)){json(res,401,{error:'Admin authorization required'});return true}
-    if(req.method==='GET'&&url.pathname==='/api/rewards/admin/gifts'){json(res,200,{gifts:await service.gifts(),variants:(env.GIFT_VARIANT_ALLOWLIST||'').split(',').map(v=>v.trim()).filter(Boolean),storeDomain:env.SHOPIFY_SHOP});return true}
+    if(req.method==='GET'&&url.pathname==='/api/rewards/admin/gifts'){json(res,200,{gifts:await service.gifts(),variants:(env.GIFT_VARIANT_ALLOWLIST||'').split(',').map(v=>v.trim()).filter(Boolean),products:REWARD_PRODUCTS,storeDomain:env.SHOPIFY_SHOP});return true}
     if(req.method==='POST'&&url.pathname==='/api/rewards/admin/gifts'){const data=await requestBody(req);if(!['approve','reject'].includes(data.action))throw Error('Choose approve or reject');json(res,200,await service.approve(data.id,data.variantId,data.action==='reject'));return true}
     json(res,404,{error:'Not found'});return true;
    }

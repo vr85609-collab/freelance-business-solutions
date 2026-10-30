@@ -9,6 +9,7 @@ document.querySelector('#rewardsPanel')?.remove();document.querySelector('#verif
 for(const script of document.querySelectorAll('script'))if(['/rewards.js','/offline.js'].includes((script.getAttribute('src')||'').split('?')[0]))script.remove();
 for(const link of document.querySelectorAll('link[rel="manifest"]'))link.remove();
 document.querySelector('title').textContent='Aqua Arcade';
+for(const a of document.querySelectorAll('a[href^="https://aquaemoticons.com"]'))a.removeAttribute('target');
 const status=document.querySelector('#connectionStatus');if(status)status.textContent='Offline arcade · Virtual stars only';
 const onlinePanel=document.querySelector('.offline-panel');if(onlinePanel)onlinePanel.remove();
 const privacy=document.createElement('a');privacy.href='/privacy.html';privacy.textContent='Privacy / Privacidad';document.querySelector('footer').appendChild(privacy);

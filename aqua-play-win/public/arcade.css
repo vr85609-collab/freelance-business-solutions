@@ -15,3 +15,5 @@ body[data-mode=playing] .home-only{display:none!important}#play,html[data-theme=
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 
 .game-card .tile:hover{outline:none}.game-card .tile:focus-visible{outline:3px solid #7caa91;outline-offset:-3px}
+
+.search-box:focus-within{outline:2px solid #7caa91;outline-offset:2px}.search-box input:focus-visible{outline:none}.search-box input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}

@@ -1,0 +1,11 @@
+Nombre: Aqua Arcade
+Descripción breve: 36 juegos sin conexión: palabras, memoria, estrategia y rompecabezas.
+Descripción:
+Tómate un momento con Aqua Arcade, una colección de 36 juegos de AquaemoticonsLLC.
+
+Explora Merge 2048, Mini Sudoku, Sopa de letras, Jardín de bloques, Choque de colores, Reversi y más. Juega sin conexión desde el primer inicio, cambia entre español e inglés y elige modo claro u oscuro. Busca por categoría, guarda favoritos y consulta instrucciones y ejemplos visuales.
+
+Las estrellas son virtuales y se guardan en tu dispositivo. Esta edición Android no ofrece cupones, dinero, productos gratis ni premios canjeables. Puedes borrar tu progreso desde los ajustes de almacenamiento de la aplicación. La tienda se abre en un navegador externo; las compras son independientes de los juegos.
+
+No incluye SDK de publicidad ni de análisis.
+Soporte: aquaemoticonsllc@gmail.com

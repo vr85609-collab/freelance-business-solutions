@@ -8,7 +8,7 @@ npm test
 npm start
 ```
 
-Open http://localhost:3000. No external assets or runtime packages are needed by the application server. `linkedom` is used only by the development tests.
+Open http://localhost:3000. The server uses `pg` for PostgreSQL and `linkedom` for isolated replay of the checked-in games. No third-party runtime game assets are loaded.
 
 ## Library
 
@@ -37,3 +37,11 @@ The service worker precaches the complete application, including new games, cata
 `npm test` checks the 36-game registry and lifecycle, the retained games, every new game, puzzle solvability, both word-game languages, arithmetic parsing, CPU round completion, valid/invalid moves, favorites/search/category/pagination/recent navigation, language switching, blocked storage, timer cancellation, duplicate rewards, and offline release consistency.
 
 All changes stay on the `aquaemoticons-play-win` branch. Render automatically deploys this branch using the `aqua-play-win` directory. Other business site files and the main branch are separate.
+
+## Verified web rewards and Android preparation
+See [the implementation and activation handoff](docs/REWARDS_AND_PLAY_HANDOFF.md).
+The new rewards module uses PostgreSQL and Shopify app-proxy identity. Production
+redemption stays disabled until deployment configuration and live checkout tests pass.
+The Android offline edition bundles the actual games and has virtual practice
+progress only. Run `npm run android:sync` before Android builds. CI builds review
+artifacts; store signing, real device tests and Play Console submission are separate.

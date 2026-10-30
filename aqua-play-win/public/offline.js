@@ -5,7 +5,7 @@
  let deferredPrompt=null;
  const update=()=>{
    const online=navigator.onLine;
-   if(status){status.textContent=online?'🟢 Online · Rewards are demos':'📴 Offline practice · No redeemable discounts';status.setAttribute('data-online',String(online));}
+   if(status){status.textContent=online?'🟢 Online · Practice stars stay on this device':'📴 Offline practice · No redeemable discounts';status.setAttribute('data-online',String(online));}
  };
  window.addEventListener('online',update);window.addEventListener('offline',update);update();
  if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){

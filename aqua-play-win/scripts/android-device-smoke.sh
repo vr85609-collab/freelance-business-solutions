@@ -8,4 +8,4 @@ adb shell am instrument -w com.aquaemoticons.arcade.test/androidx.test.runner.An
 # am instrument can return zero even when its test failed. Require JUnit's success summary.
 adb pull /sdcard/Android/data/com.aquaemoticons.arcade/files/screenshots android/device-screenshots
 grep -Eq '^OK [(]1 test[)]' android/instrumentation-result.txt
-test "$(find android/device-screenshots -name '*.png' | wc -l)" -eq 7
+test "$(find android/device-screenshots -name '*.png' | wc -l)" -eq 9

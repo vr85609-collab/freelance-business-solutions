@@ -95,6 +95,9 @@ public final class OfflineArcadeTest {
             ready(scene);
             js(scene, "window.__arcadeErrors=[]; window.addEventListener('error',e=>window.__arcadeErrors.push(e.message)); if(document.documentElement.dataset.theme==='dark')document.querySelector('#themeToggle').click(); home(); window.scrollTo(0,0);");
             screenshot("01-home-en");
+            js(scene, "document.querySelector('#catalog').scrollIntoView();");
+            screenshot("08-illustrated-library");
+            js(scene, "window.scrollTo(0,0);");
             storeLinkOpensBrowser(scene);
             // Open every real bundled game, including those below the initial library page.
             String ids = js(scene, "Object.keys(keys).join(',')").replace("\"", "");
@@ -102,6 +105,7 @@ public final class OfflineArcadeTest {
             for (String id : ids.split(",")) {
                 js(scene, "open('" + id + "');");
                 assertEquals(id + " opens", "true", js(scene, "document.body.dataset.mode==='playing' && document.querySelector('#gameTitle').textContent.length>0"));
+                if (id.equals("gems")) screenshot("09-gem-swap-en");
                 if (id.equals("twenty")) screenshot("02-merge-2048-en");
                 if (id.equals("wordsearch")) screenshot("03-word-search-en");
                 if (id.equals("blocks")) screenshot("04-block-garden-en");

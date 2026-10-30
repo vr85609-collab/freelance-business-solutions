@@ -102,9 +102,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           working-directory: aqua-play-win
-          script: |
-            gradle -p android :app:connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/com.aquaemoticons.arcade/files/screenshots android/device-screenshots
+          script: bash scripts/android-device-smoke.sh
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -113,3 +111,4 @@ jobs:
             aqua-play-win/android/device-screenshots/*.png
             aqua-play-win/android/app/build/reports/androidTests/
             aqua-play-win/android/app/build/outputs/androidTest-results/
+            aqua-play-win/android/instrumentation-result.txt

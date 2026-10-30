@@ -10,3 +10,4 @@ android/app/src/main/assets/
 *.keystore
 *.p12
 android/device-screenshots/
+android/instrumentation-result.txt

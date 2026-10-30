@@ -85,3 +85,19 @@ test('multiple real game engines replay consistently, including Spanish word gam
   assert(h.done());const result=await verifyReplay({game,seed:1234567,language,events});assert(result.won,game+' '+language+': '+result.error);
  }
 });
+
+test('web rewards client records the actual clicked moves and submits a replay instead of local totals',async()=>{
+ const h=setup();h.window.__clock=0;h.window.__requests=[];
+ h.run(`navigator.onLine=true;globalThis.performance={now:()=>window.__clock};globalThis.fetch=async(path,options={})=>{
+  const data=options.body?JSON.parse(options.body):undefined;window.__requests.push({path,data});
+  let body=path.endsWith('/status')?{accountsReady:true,enabled:true,verifiedGames:['focus']}:path.endsWith('/me')?{balance:0,stars:0,wins:0,days:0,streak:0,rewards:[],claims:[]}:path.endsWith('/start')?{id:'00000000-0000-4000-8000-000000000001',seed:1234567}:{credited:true,earned:25};
+  return {ok:true,json:async()=>body};
+ };`);
+ h.run(fs.readFileSync(__dirname+'/../public/rewards.js','utf8'));
+ await new Promise(r=>setImmediate(r));await h.run(`open('focus')`);
+ for(let v=1;v<=16;v++){h.window.__clock=21000+v*100;const b=h.buttons().find(b=>b.textContent===String(v));b.click()}
+ await new Promise(r=>setImmediate(r));
+ const submitted=h.window.__requests.find(r=>r.path.endsWith('/finish'));assert(submitted,'win submitted');
+ assert.equal(submitted.data.events.length,16);assert(!('stars' in submitted.data));assert(!('customerId' in submitted.data));
+ const {verifyReplay}=await import('../rewards/replay.js');assert((await verifyReplay({game:'focus',seed:1234567,language:'en',events:submitted.data.events})).won);
+});

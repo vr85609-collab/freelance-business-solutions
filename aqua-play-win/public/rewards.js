@@ -53,8 +53,9 @@
  let touch=null;
  board.addEventListener('touchstart',e=>{if(session?.game==='twenty')touch=[e.touches[0].clientX,e.touches[0].clientY]},true);
  board.addEventListener('touchend',e=>{if(!touch||session?.game!=='twenty')return;const dx=e.changedTouches[0].clientX-touch[0],dy=e.changedTouches[0].clientY-touch[1];touch=null;if(Math.max(Math.abs(dx),Math.abs(dy))>=25)record({kind:'key',value:Math.abs(dx)>Math.abs(dy)?(dx>0?'ArrowRight':'ArrowLeft'):(dy>0?'ArrowDown':'ArrowUp')})},true);
- win=function(stars,note){const proof=session;const already=finished;originalWin(stars,note);if(already||!proof)return;session=null;
-  api('finish',{id:proof.id,events:proof.events}).then(result=>{say(result.credited?'Verified win: +'+result.earned+' reward points.':result.reason);refresh()}).catch(e=>say(e.message+' Practice stars are still saved.'));
+ win=function(stars,note){const proof=session;const already=finished;originalWin(stars,note);if(already||!proof)return;
+  // Let the current input event finish dispatching before freezing its transcript.
+  Promise.resolve().then(()=>{if(session===proof)session=null;return api('finish',{id:proof.id,events:proof.events.map(e=>({...e}))})}).then(result=>{say(result.credited?'Verified win: +'+result.earned+' reward points.':result.reason);refresh()}).catch(e=>say(e.message+' Practice stars are still saved.'));
  };
  document.getElementById('languageToggle').addEventListener('click',()=>{session=null;refresh()});
  window.AquaRewards={refresh};refresh();

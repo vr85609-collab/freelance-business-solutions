@@ -51,3 +51,19 @@ html[data-theme=dark]{--board-bed:#152b24;--piece-top:#385447;--piece-bottom:#29
 /* Board swipes move tiles while retaining pinch-to-zoom accessibility. */
 .board.twenty{touch-action:pinch-zoom}
 .app-update{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 20px;background:var(--soft);color:var(--ink);border-bottom:1px solid var(--line);font-size:13px}.app-update button{min-height:44px}
+
+/* Keep layout crisp at any density; skip painting library cards outside the viewport. */
+.game-card{content-visibility:auto;contain-intrinsic-size:auto 340px}
+.play-settings{max-width:920px;margin:24px auto;padding:14px 0;border-top:1px solid var(--line)}
+.play-settings summary{min-height:44px;display:list-item;align-content:center;font-size:13px;font-weight:650;color:var(--ink)}
+.play-settings .controls{padding:8px 0}.play-settings button{min-height:44px}
+.play-settings p{font-size:12px;line-height:1.6}
+.board.twenty button{z-index:0}
+.board.tictac button{font-size:clamp(32px,8vw,48px);font-weight:650;aspect-ratio:1}
+.board.connect button{border-radius:50%;background:radial-gradient(circle at 35% 25%,var(--piece-top),var(--piece-bottom));aspect-ratio:1;min-height:0}
+#feedback:not(:empty){padding:14px 18px;border-radius:14px;background:var(--soft);border:1px solid var(--line)}
+@media(hover:none){.game-card:hover{transform:none;box-shadow:0 3px 0 #b3c6b02b}.game-card:hover .game-icon svg{transform:none}.board button:hover:not(:disabled){transform:none;filter:none}}
+html[data-effects=light] .board,html[data-effects=light] .board button,html[data-effects=light] #play,html[data-effects=light] .game-card{box-shadow:none!important}
+html[data-effects=light] .game-card,html[data-effects=light] .game-icon svg,html[data-effects=light] .board button{transition:none!important;filter:none!important}
+html[data-effects=light] .game-card:hover,html[data-effects=light] .game-card:hover .game-icon svg,html[data-effects=light] .board button:hover,html[data-effects=light] .board button:active{transform:none!important}
+@media(max-width:600px){.game-card{contain-intrinsic-size:auto 275px}}

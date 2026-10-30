@@ -70,7 +70,7 @@ public final class MainActivity extends Activity {
             else finish();
         });
     }
-    @Override protected void onPause() { webView.onPause(); super.onPause(); }
-    @Override protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
+    @Override protected void onPause() { webView.onPause(); webView.pauseTimers(); super.onPause(); }
+    @Override protected void onResume() { super.onResume(); if (webView != null) { webView.resumeTimers(); webView.onResume(); } }
     @Override protected void onDestroy() { webView.destroy(); super.onDestroy(); }
 }

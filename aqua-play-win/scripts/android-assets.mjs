@@ -2,7 +2,7 @@ import {readFile,writeFile,mkdir,copyFile,readdir,rm} from 'node:fs/promises';
 import {parseHTML} from 'linkedom';
 const source=new URL('../public/',import.meta.url),target=new URL('../android/app/src/main/assets/',import.meta.url);
 await rm(target,{recursive:true,force:true});await mkdir(target,{recursive:true});
-const files=['game-art.svg','app.js','extra-games.js','new-games.js','catalog.js','arcade.css','theme.js','language.js','brand-logo.png','icon.svg'];
+const files=['game-art.svg','app.js','extra-games.js','new-games.js','catalog.js','arcade.css','theme.js','language.js','brand-logo.webp','app-icon.png','experience.js'];
 for(const file of files)await copyFile(new URL(file,source),new URL(file,target));
 const {document}=parseHTML(await readFile(new URL('index.html',source),'utf8'));
 document.querySelector('#rewardsPanel')?.remove();document.querySelector('#verifiedGameMessage')?.remove();

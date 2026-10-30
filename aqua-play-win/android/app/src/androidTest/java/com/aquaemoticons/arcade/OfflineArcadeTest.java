@@ -44,9 +44,21 @@ public final class OfflineArcadeTest {
         }
         fail("Bundled arcade did not initialize");
     }
-    private void screenshot(String name) throws Exception {
+    private void screenshot(ActivityScenario<MainActivity> scene, String name) throws Exception {
+        // Fence the actual WebView compositor; JS completion alone can capture an older page.
+        CountDownLatch presented = new CountDownLatch(1);
+        scene.onActivity(activity -> {
+            ViewGroup content = activity.findViewById(android.R.id.content);
+            WebView view = (WebView) content.getChildAt(0);
+            view.postVisualStateCallback(System.nanoTime(), new WebView.VisualStateCallback() {
+                @Override public void onComplete(long requestId) {
+                    view.invalidate();
+                    view.postOnAnimation(() -> view.postOnAnimation(presented::countDown));
+                }
+            });
+        });
+        assertTrue("WebView did not present the requested screenshot state", presented.await(15, TimeUnit.SECONDS));
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
-        Thread.sleep(350); // Allow WebView compositor to present the already-checked state.
         Bitmap bitmap = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
         assertNotNull("Screenshot unavailable", bitmap);
         File folder = new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null), "screenshots");
@@ -94,7 +106,10 @@ public final class OfflineArcadeTest {
             Thread.sleep(500);
             ready(scene);
             js(scene, "window.__arcadeErrors=[]; window.addEventListener('error',e=>window.__arcadeErrors.push(e.message)); if(document.documentElement.dataset.theme==='dark')document.querySelector('#themeToggle').click(); home(); window.scrollTo(0,0);");
-            screenshot("01-home-en");
+            screenshot(scene, "01-home-en");
+            js(scene, "document.querySelector('#catalog').scrollIntoView();");
+            screenshot(scene, "08-illustrated-library");
+            js(scene, "window.scrollTo(0,0);");
             storeLinkOpensBrowser(scene);
             // Open every real bundled game, including those below the initial library page.
             String ids = js(scene, "Object.keys(keys).join(',')").replace("\"", "");
@@ -102,10 +117,11 @@ public final class OfflineArcadeTest {
             for (String id : ids.split(",")) {
                 js(scene, "open('" + id + "');");
                 assertEquals(id + " opens", "true", js(scene, "document.body.dataset.mode==='playing' && document.querySelector('#gameTitle').textContent.length>0"));
-                if (id.equals("twenty")) screenshot("02-merge-2048-en");
-                if (id.equals("wordsearch")) screenshot("03-word-search-en");
-                if (id.equals("blocks")) screenshot("04-block-garden-en");
-                if (id.equals("cards")) screenshot("05-color-clash-en");
+                if (id.equals("gems")) screenshot(scene, "09-gem-swap-en");
+                if (id.equals("twenty")) screenshot(scene, "02-merge-2048-en");
+                if (id.equals("wordsearch")) screenshot(scene, "03-word-search-en");
+                if (id.equals("blocks")) screenshot(scene, "04-block-garden-en");
+                if (id.equals("cards")) screenshot(scene, "05-color-clash-en");
                 js(scene, "home();");
             }
             assertEquals("[]", js(scene, "window.__arcadeErrors"));
@@ -116,12 +132,12 @@ public final class OfflineArcadeTest {
             js(scene, "document.querySelector('#languageToggle').click();");
             assertEquals("\"es\"", js(scene, "window.AquaLanguage.language"));
             js(scene, "open('wordsearch');");
-            screenshot("06-word-search-es-dark");
+            screenshot(scene, "06-word-search-es-dark");
             js(scene, "home();");
             scene.recreate();
             ready(scene);
             assertEquals("true", js(scene, "progress.stars===20 && progress.finished===1 && window.AquaLanguage.language==='es' && document.documentElement.dataset.theme==='dark'"));
-            screenshot("07-home-es-dark");
+            screenshot(scene, "07-home-es-dark");
         }
     }
 }

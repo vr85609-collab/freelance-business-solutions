@@ -43,7 +43,7 @@ npm run android:sync
 gradle -p android :app:lintRelease :app:assembleDebug :app:bundleRelease
 ```
 
-The root `.github/workflows/aqua-arcade.yml` provides PostgreSQL tests and an Android build on pull request or manual dispatch. Build artifacts include a debug APK, unsigned release AAB and lint report. No release keystore is generated or committed. The AAB must be signed with your upload key before Play Console can accept it. The local workspace has JDK 17 but no Android SDK/Gradle, so an Android compilation/device test is not claimed until CI runs successfully.
+The root `.github/workflows/aqua-arcade.yml` provides PostgreSQL tests and an Android build on pull request or manual dispatch. Build artifacts include a debug APK, unsigned release AAB and lint report. No release keystore is generated or committed. The AAB must be signed with your upload key before Play Console can accept it. The local workspace has JDK 17 but no Android SDK/Gradle, so an Android compilation is performed by CI; real-device testing is still required.
 
 ### Submission checklist
 - Obtain/verify your Google Play developer account and complete its required identity checks. Do not create paid accounts or accept legal agreements automatically.
@@ -63,3 +63,6 @@ Sources checked October 30, 2026:
 - https://support.google.com/googleplay/android-developer/answer/13327111
 - https://shopify.dev/docs/apps/build/online-store/app-proxies/authenticate-app-proxies
 - https://shopify.dev/docs/api/admin-graphql/2026-10/mutations/discountCodeBasicCreate
+
+## Verified build results
+GitHub Actions run 41028216036 passed tests against PostgreSQL 17 and Android lint, debug APK and unsigned release AAB generation. The Android source has no real-value rewards. Subsequent changes to web-only capacity reservation do not change bundled Android assets. Native device testing, release signing and Play submission remain outstanding.

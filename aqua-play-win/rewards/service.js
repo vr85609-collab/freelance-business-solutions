@@ -82,11 +82,16 @@ export class RewardsService {
   if(!this.enabled())throw Error('Coupon and gift redemption is not activated');
   const reward=POLICY.rewards.find(r=>r.id===rewardId);if(!reward)throw Error('Unknown reward');
   return this.tx(async c=>{
+   await c.query('SELECT pg_advisory_xact_lock(20261030)');
    const a=(await c.query('SELECT * FROM arcade_accounts WHERE customer_gid=$1 FOR UPDATE',[gid])).rows[0];
    const week=reward.approval?null:weekKey(dayKey(this.clock()));
    if(week){const existing=(await c.query('SELECT * FROM arcade_claims WHERE customer_gid=$1 AND week=$2',[gid,week])).rows[0];if(existing){if(existing.reward_id!==rewardId)throw Error('Weekly claim limit reached');return existing}}
    if(reward.approval&&(await c.query("SELECT id FROM arcade_claims WHERE customer_gid=$1 AND reward_id='bathbomb' AND status<>'rejected'",[gid])).rowCount)throw Error('Gift request already exists');
    if(!eligibility(a,reward))throw Error('Not enough verified points, wins, or days');
+   if(week){const cap=Number(this.env.MAX_COUPONS_PER_WEEK||20);if(!Number.isInteger(cap)||cap<1)throw Error('Program limits are not configured correctly');
+    const reserved=(await c.query("SELECT count(*)::int AS n FROM arcade_claims WHERE week=$1 AND status IN ('approved','issuing','issued')",[week])).rows[0].n;
+    if(reserved>=cap)throw Error('Program weekly limit reached. Your points were not spent');}
+
    const id=randomUUID();const r=await c.query('INSERT INTO arcade_claims(id,customer_gid,reward_id,cost,week,status) VALUES($1,$2,$3,$4,$5,$6) RETURNING *',[id,gid,rewardId,reward.points,week,reward.approval?'pending':'approved']);
    await c.query('UPDATE arcade_accounts SET balance=balance-$1 WHERE customer_gid=$2',[reward.points,gid]);return r.rows[0];
   });
@@ -120,7 +125,7 @@ export class RewardsService {
    }
    const capacity=Number(this.env.MAX_COUPONS_PER_WEEK||20),giftCapacity=Number(this.env.MAX_GIFTS_PER_30_DAYS||5);
    if(!Number.isInteger(capacity)||capacity<1||!Number.isInteger(giftCapacity)||giftCapacity<1)throw Error('Program limits are not configured correctly');
-   const count=(await c.query("SELECT count(*)::int AS n FROM arcade_claims WHERE week=$1 AND status IN ('issuing','issued')",[week])).rows[0].n;
+   const count=(await c.query("SELECT count(*)::int AS n FROM arcade_claims WHERE week=$1 AND id<>$2 AND status IN ('approved','issuing','issued')",[week,id])).rows[0].n;
    if(count>=Number(this.env.MAX_COUPONS_PER_WEEK||20))throw Error('Program weekly limit reached');
    const code='AQUA-'+randomBytes(16).toString('hex').toUpperCase();r={...r,code};
    const input=discountInput(r,this.clock());

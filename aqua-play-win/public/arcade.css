@@ -17,3 +17,6 @@ body[data-mode=playing] .home-only{display:none!important}#play,html[data-theme=
 .game-card .tile:hover{outline:none}.game-card .tile:focus-visible{outline:3px solid #7caa91;outline-offset:-3px}
 
 .search-box:focus-within{outline:2px solid #7caa91;outline-offset:2px}.search-box input:focus-visible{outline:none}.search-box input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none}
+
+/* Use the supplied artwork directly; view boxes adapt its tall layout to the header. */
+.brand-art{display:flex;align-items:center;gap:9px;background:#fff;border-radius:11px;padding:5px 9px 5px 6px;color:#174bb7}.brand-emblem{display:block;width:40px;height:40px;flex:none}.brand-name{display:flex;flex-direction:column;align-items:center}.brand-wordmark{display:block;width:184px;height:48px}.arcade-label{font-family:system-ui,sans-serif;font-size:9px;letter-spacing:1.5px;font-weight:650;text-transform:uppercase;line-height:1;margin:-3px 0 4px;color:#536a89}@media(max-width:600px){.brand-art{padding:4px 7px 4px 4px;gap:5px}.brand-emblem{width:30px;height:30px}.brand-wordmark{width:139px;height:37px}.arcade-label{font-size:8px;letter-spacing:1px;margin:-1px 0 3px}.app-header{gap:10px}}

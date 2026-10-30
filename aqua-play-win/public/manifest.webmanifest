@@ -1,13 +1,13 @@
 {
   "id": "/",
-  "name": "Aquaemoticons Play & Win — Aqua Arcade",
+  "name": "Aquaemoticons Play & Win \u2014 Aqua Arcade",
   "short_name": "Aqua Arcade",
-  "description": "12 mini games and puzzles, with optional offline play. Rewards in demo mode.",
+  "description": "36 mini games and puzzles, with optional offline play. Virtual rewards only.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0b1524",
-  "theme_color": "#154c73",
+  "background_color": "#f4f6f2",
+  "theme_color": "#286454",
   "icons": [
     {
       "src": "/icon.svg",

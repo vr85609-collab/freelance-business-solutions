@@ -5,12 +5,20 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test tests/*.test.cjs"
+    "test": "node --test tests/*.test.cjs",
+    "rewards:migrate": "node scripts/migrate.mjs",
+    "rewards:cleanup": "node scripts/cleanup.mjs",
+    "android:sync": "node scripts/android-assets.mjs",
+    "pretest": "node scripts/android-assets.mjs"
   },
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "linkedom": "0.18.14",
+    "pg": "8.16.3"
+  },
   "devDependencies": {
-    "linkedom": "0.18.14"
+    "@electric-sql/pglite": "0.3.14"
   }
 }

@@ -1,4 +1,6 @@
 import http from 'node:http';
+import {createRewardsHandler} from './rewards/http.js';
+const handleRewards=createRewardsHandler();
 import {readFile} from 'node:fs/promises';
 import {randomInt,randomUUID} from 'node:crypto';
 const port=Number(process.env.PORT||3000);
@@ -10,6 +12,7 @@ async function body(req){let data='';for await(const chunk of req){data+=chunk;i
 const server=http.createServer(async(req,res)=>{
  try{
  const url=new URL(req.url,'http://localhost');
+ if(await handleRewards(req,res,url))return;
  if(req.method==='POST'&&url.pathname==='/api/start'){
   const id=randomUUID();sessions.set(id,{secret:randomInt(1,5),round:0,wins:0,expires:Date.now()+10*60_000});return json(res,200,{id,round:1,options:4});
  }
@@ -26,6 +29,12 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='GET'&&(url.pathname==='/'||url.pathname==='/index.html')){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, must-revalidate','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'"});res.end(await readFile(new URL('./public/index.html',import.meta.url)));return}
  if(req.method==='GET'&&url.pathname==='/theme.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/theme.js',import.meta.url)));return}
  const offlineAssets={
+  '/rewards.js':['./public/rewards.js','text/javascript; charset=utf-8'],
+  '/rewards-admin.js':['./public/rewards-admin.js','text/javascript; charset=utf-8'],
+  '/privacy':['./public/privacy.html','text/html; charset=utf-8'],
+  '/rewards-terms':['./public/rewards-terms.html','text/html; charset=utf-8'],
+  '/delete-account':['./public/delete-account.html','text/html; charset=utf-8'],
+  '/rewards-admin':['./public/rewards-admin.html','text/html; charset=utf-8'],
   '/brand-logo.png':['./public/brand-logo.png','image/png'],
   '/new-games.js':['./public/new-games.js','text/javascript; charset=utf-8'],
   '/catalog.js':['./public/catalog.js','text/javascript; charset=utf-8'],
@@ -39,11 +48,9 @@ const server=http.createServer(async(req,res)=>{
  };
  if(req.method==='GET'&&offlineAssets[url.pathname]){
   const [filepath,mime]=offlineAssets[url.pathname];
-  res.writeHead(200,{'Content-Type':mime,'Cache-Control':url.pathname==='/sw.js'?'no-cache':'no-store, must-revalidate'});
+  res.writeHead(200,{'Content-Type':mime,'Cache-Control':url.pathname==='/sw.js'?'no-cache':'no-store, must-revalidate','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'"});
   res.end(await readFile(new URL(filepath,import.meta.url)));return;
  }
- if(req.method==='GET'&&url.pathname==='/api/rewards/status')return json(res,200,{enabled:false,claimingEnabled:false,shop:'aquaemoticons.com',audience:'all verified Shopify customers',launch:'immediately after verification and security tests pass',minimumPurchaseUSD:25,discountTiers:[5,10,15],weeklyClaimsPerCustomer:1,codeUses:1,codeExpiryHours:72,combineWithOtherDiscounts:false,offlineScoresEligible:false,identityVerificationReady:false,persistentClaimsReady:false,shopifyApiReady:false,reason:'Customer identity, durable one-per-week claim records, and a secure server-side Shopify integration are not yet configured.'});
- if(req.method==='POST'&&url.pathname==='/api/rewards/claim')return json(res,503,{error:'Redemption not yet enabled. No code has been issued.',enabled:false});
  if(req.method==='GET'&&url.pathname==='/app.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/app.js',import.meta.url)));return}
  json(res,404,{error:'Not found'});
  }catch(e){json(res,400,{error:e.message||'Invalid request'})}

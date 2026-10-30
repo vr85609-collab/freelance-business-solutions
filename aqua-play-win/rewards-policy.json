@@ -1,49 +1,22 @@
 {
-  "program": "Aqua Arcade Play & Win",
-  "shopDomain": "aquaemoticons.com",
-  "status": "disabled_pending_security_verification",
-  "launch": {
-    "mode": "immediately_after_all_security_checks_pass",
-    "audience": "all_verified_shopify_customers",
-    "enabled": false
-  },
-  "rules": {
-    "discountTiers": [
-      {
-        "correctGuessesMin": 0,
-        "correctGuessesMax": 3,
-        "percent": 5
-      },
-      {
-        "correctGuessesMin": 4,
-        "correctGuessesMax": 6,
-        "percent": 10
-      },
-      {
-        "correctGuessesMin": 7,
-        "correctGuessesMax": 10,
-        "percent": 15
-      }
-    ],
-    "minimumPurchaseUSD": 25,
-    "maxClaimsPerCustomerPerWeek": 1,
-    "weekBoundary": "America/Chicago calendar week starting Monday",
-    "singleUseCode": true,
-    "combinesWithOtherDiscounts": false,
-    "expireAfterHours": 72
-  },
-  "offline": {
-    "playAllowed": true,
-    "redemptionAllowed": false,
-    "offlineStarsQualify": false
-  },
-  "security": {
-    "shopifyCustomerVerificationRequired": true,
-    "serverValidatedGameRequired": true,
-    "persistentDatabaseRequired": true,
-    "atomicClaimConstraintsRequired": true,
-    "claimRateLimitingRequired": true,
-    "shopifyAdminCredentialsRequired": true,
-    "checkoutTestingRequired": true
-  }
+  "version": "2026-10-30-profit-review",
+  "enabled": false,
+  "audience": "verified Shopify customers",
+  "webOnly": true,
+  "source": "rewards/policy.js",
+  "localScoresEligible": false,
+  "starsPerVerifiedWin": 20,
+  "maxDistinctRewardGamesPerDay": 3,
+  "firstWinOfDayBonus": 5,
+  "sevenDayBonus": 25,
+  "weeklyClaimsPerCustomer": 1,
+  "codeUses": 1,
+  "codeExpiryHours": 168,
+  "coupons": [{"points":500,"wins":20,"days":7,"amountUSD":2,"eligibleSubtotalUSD":25},{"points":1500,"wins":60,"days":21,"amountUSD":4,"eligibleSubtotalUSD":40},{"points":3000,"wins":120,"days":45,"amountUSD":6,"eligibleSubtotalUSD":50}],
+  "eligibleProducts": ["Citrus Burst Bath Bomb", "Sleepy Time Bath Bomb", "Love It Bath Bomb"],
+  "gift": {"points":4000,"wins":150,"days":60,"buyQuantity":5,"freeQuantity":1,"approval":"merchant","acceptedRequestsPerCustomer":1},
+  "giftShippingIncluded": false,
+  "initialWeeklyCodeCap": 10,
+  "initialRolling30DayGiftCap": 3,
+  "android": "offline practice only; no real-value redemption"
 }

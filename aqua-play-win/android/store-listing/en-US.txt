@@ -1,0 +1,20 @@
+App name: Aqua Arcade
+Short description: A little escape with 36 offline puzzles, word games, and strategy challenges.
+Full description:
+Take a little time for yourself with Aqua Arcade, a collection of 36 casual games and puzzles from AquaemoticonsLLC.
+
+Find your next favorite among number puzzles, memory challenges, word games, card play, and strategy boards. Try Merge 2048, Mini Sudoku, Word Search, Block Garden, Color Clash, Reversi, Maze Escape, and more.
+
+• Play the bundled games offline, including on first launch.
+• Switch between English and Spanish.
+• Choose light or dark mode.
+• Find games with categories and search.
+• Save favorites and see recently played games.
+• Open each game's instructions and visual examples.
+• Collect virtual practice stars on your device.
+
+This Android edition does not offer coupons, cash, physical prizes, paid points, or redeemable rewards. Practice progress is saved on your device and can be removed by clearing app storage. A link to the Aquaemoticons store opens in your browser; purchases are separate from gameplay.
+
+No advertising SDK or analytics SDK is included.
+Support: aquaemoticonsllc@gmail.com
+Category suggestion: Games / Puzzle

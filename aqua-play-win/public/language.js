@@ -10,6 +10,8 @@ map.set('Update app','Actualizar aplicación');
 map.set('↻ Restart game','↻ Reiniciar juego');
 const originals=new WeakMap();
 const attrOriginals=new WeakMap();
+map.set('Shop bath bombs & more ↗','Comprar bombas de baño y más ↗');
+map.set('Visit AquaemoticonsLLC','Visita AquaemoticonsLLC');
 const localeKey='aqua_arcade_language';
 let language='en';
 try{const saved=localStorage.getItem(localeKey);if(saved==='en'||saved==='es')language=saved;}catch{}

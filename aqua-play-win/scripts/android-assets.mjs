@@ -1,0 +1,26 @@
+import {readFile,writeFile,mkdir,copyFile,readdir,rm} from 'node:fs/promises';
+import {parseHTML} from 'linkedom';
+const source=new URL('../public/',import.meta.url),target=new URL('../android/app/src/main/assets/',import.meta.url);
+await rm(target,{recursive:true,force:true});await mkdir(target,{recursive:true});
+const files=['app.js','extra-games.js','new-games.js','catalog.js','arcade.css','theme.js','language.js','brand-logo.png','icon.svg'];
+for(const file of files)await copyFile(new URL(file,source),new URL(file,target));
+const {document}=parseHTML(await readFile(new URL('index.html',source),'utf8'));
+document.querySelector('#rewardsPanel')?.remove();document.querySelector('#verifiedGameMessage')?.remove();
+for(const script of document.querySelectorAll('script'))if(['/rewards.js','/offline.js'].includes((script.getAttribute('src')||'').split('?')[0]))script.remove();
+for(const link of document.querySelectorAll('link[rel="manifest"]'))link.remove();
+document.querySelector('title').textContent='Aqua Arcade';
+for(const a of document.querySelectorAll('a[href^="https://aquaemoticons.com"]'))a.removeAttribute('target');
+const status=document.querySelector('#connectionStatus');if(status)status.textContent='Offline arcade · Virtual stars only';
+const onlinePanel=document.querySelector('.offline-panel');if(onlinePanel)onlinePanel.remove();
+const privacy=document.createElement('a');privacy.href='/privacy.html';privacy.textContent='Privacy / Privacidad';document.querySelector('footer').appendChild(privacy);
+const meta=document.createElement('meta');meta.setAttribute('http-equiv','Content-Security-Policy');meta.setAttribute('content',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:");document.head.appendChild(meta);
+let html=document.toString().replace('Device-only practice stars. Verified store rewards are tracked separately.','Virtual stars. Just for fun.');
+await writeFile(new URL('index.html',target),html);
+await writeFile(new URL('privacy.html',target),'<!doctype html><html lang="en"><meta name="viewport" content="width=device-width"><title>Aqua Arcade privacy</title><h1>Aqua Arcade privacy</h1><p>This offline edition saves practice progress, favorites, language, and theme only on your device. It has no server account, coupons, physical prizes, ads, analytics SDK, or payment system. Clear Android app storage to delete all progress. Store links open externally and the store has its own privacy policy.</p><p>Operator: AquaemoticonsLLC. Contact: aquaemoticonsllc@gmail.com.</p><a href="/index.html">Games</a></html>');
+// Use exactly the same game code, but remove obsolete illustrative store discounts from the Android UI.
+let app=await readFile(new URL('app.js',target),'utf8');
+app=app.replace("reward.textContent=(offlinePractice?'Offline practice · ':'')+'Illustrative '+percentage+'% discount (minimum $25). NOT a Shopify coupon or redeemable prize.';","reward.textContent='Practice complete. Virtual stars only.';");
+app=app.replace(/You will also see a nonredeemable demo discount:[^']*/,'These are virtual practice stars only.');
+app=app.replace('All Shopify discounts are DEMOS and cannot be redeemed.','No coupons or physical rewards are available in this edition.');
+await writeFile(new URL('app.js',target),app);
+console.log('Bundled 36 games. Native build contains no rewards API client, remote code, or sign-in.');

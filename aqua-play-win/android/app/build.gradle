@@ -1,0 +1,47 @@
+plugins { id 'com.android.application' }
+// Credentials are supplied by the release operator, never stored in the repository.
+def signingKeys = ['AQUA_UPLOAD_STORE_FILE', 'AQUA_UPLOAD_STORE_PASSWORD', 'AQUA_UPLOAD_KEY_ALIAS', 'AQUA_UPLOAD_KEY_PASSWORD']
+def signingValues = signingKeys.collectEntries { [(it): System.getenv(it)] }
+def signingSupplied = signingValues.values().count { it != null && !it.isBlank() }
+if (signingSupplied > 0 && signingSupplied != signingKeys.size()) {
+    throw new GradleException('Provide all four AQUA_UPLOAD signing environment variables, or none for an unsigned review build.')
+}
+android {
+    namespace 'com.aquaemoticons.arcade'
+    compileSdk 36
+    buildFeatures { buildConfig true }
+    defaultConfig {
+        applicationId 'com.aquaemoticons.arcade'
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    signingConfigs {
+        if (signingSupplied == signingKeys.size()) {
+            upload {
+                storeFile file(signingValues.AQUA_UPLOAD_STORE_FILE)
+                storePassword signingValues.AQUA_UPLOAD_STORE_PASSWORD
+                keyAlias signingValues.AQUA_UPLOAD_KEY_ALIAS
+                keyPassword signingValues.AQUA_UPLOAD_KEY_PASSWORD
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (signingSupplied == signingKeys.size()) signingConfig signingConfigs.upload
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+dependencies {
+    implementation 'androidx.webkit:webkit:1.14.0'
+    androidTestImplementation 'androidx.test:core:1.6.1'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}

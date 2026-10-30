@@ -1,13 +1,10 @@
 /* Five self-contained offline games. No purchases or redeemable rewards. */
-const extraGames={pool:poolGame,cards:cardGame,blocks:blockGame,wordsearch:wordSearch,wordtiles:wordTiles};
-const extraNames={pool:'Pocket Pool',cards:'Color Clash',blocks:'Block Garden',wordsearch:'Word Search',wordtiles:'Word Tiles'};
+const extraGames={cards:cardGame,blocks:blockGame,wordsearch:wordSearch,wordtiles:wordTiles};
+const extraNames={cards:'Color Clash',blocks:'Block Garden',wordsearch:'Word Search',wordtiles:'Word Tiles'};
 Object.assign(keys,extraNames);
 const extraTranslations=new Map();
 function pair(en,es){extraTranslations.set(en,es);return en}
 const specs=[
- ['pool','🎱','Pocket Pool','Billar','Aim • Pocket six balls', 'Apunta • Emboca seis bolas',
- 'Tap or drag on the table to aim from the white ball, or use the Aim angle slider. Set power, then Shoot. The dotted line previews the path. Scratching costs an extra shot.', 'Toca o arrastra sobre la mesa para apuntar desde la bola blanca, o usa el ángulo. Ajusta la fuerza y pulsa Tirar. La línea muestra el recorrido. Embocar la blanca cuesta un tiro extra.',
- 'Pocket all six colored balls within 20 shots.', 'Emboca las seis bolas de color en 20 tiros.',25],
  ['cards','🃏','Color Clash','Choque de colores','Cards • Match color or number','Cartas • Combina color o número',
  'Play against the computer. Match the top card by color or number. +2 makes the opponent draw two and skips their turn; skip also skips a turn. A wild uses your selected color. Draw one when you cannot play. No stacking.', 'Juega contra la computadora. Combina el color o número de la carta central. +2 obliga al rival a tomar dos y pierde su turno; salto también salta su turno. El comodín usa el color que elijas. Toma una si no puedes jugar. No se acumulan penalizaciones.',
  'Empty your seven-card hand before the computer.', 'Descarta tus siete cartas antes que la computadora.',20],
@@ -25,7 +22,7 @@ for(const [id,emoji,en,es,sub,subes,rules,ruleses,goal,goales,reward] of specs){
  pair(en,es);pair(sub,subes);pair(rules,ruleses);pair(goal,goales);
  const rewardText=pair('Win: '+reward+' virtual stars.','Victoria: '+reward+' estrellas virtuales.');
  gameHelp[id]={category:'Free Play',rules,win:goal,reward:rewardText};
- const sample=id==='pool'?['⚪','↗','🔴','🕳️']:id==='cards'?['🔴 5','→','🔴 2','✓']:id==='blocks'?['■','■','□','□']:id==='wordsearch'?['S','T','A','R']:['S','T','A','R'];
+ const sample=id==='cards'?['🔴 5','→','🔴 2','✓']:id==='blocks'?['■','■','□','□']:id==='wordsearch'?['S','T','A','R']:['S','T','A','R'];
  visualExamples[id]=[{cols:4,board:sample,mark:[0],caption:rules},{cols:4,board:sample,highlight:[0,1,2,3],caption:goal}];
  const holder=document.createElement('div');holder.className='tilewrap';
  const tile=document.createElement('button');tile.className='tile';tile.dataset.game=id;tile.innerHTML='<span class="emoji">'+emoji+'</span><h3>'+en+'</h3><small>'+sub+'</small>';tile.onclick=()=>open(id);holder.appendChild(tile);
@@ -35,32 +32,6 @@ for(const [id,emoji,en,es,sub,subes,rules,ruleses,goal,goales,reward] of specs){
 const l=(en,es)=>{pair(en,es);return en;};
 function extraEnd(message){if(finished)return;finished=true;stopInputs();feedback.textContent=message;btn(l('Try again','Intentar de nuevo'),()=>open(game));}
 function field(label,type,value,min,max){const box=document.createElement('label');box.textContent=label+' ';const input=document.createElement('input');input.type=type;input.value=value;input.min=min;input.max=max;box.appendChild(input);controls.appendChild(box);return input;}
-function poolGame(){
- board.className='board pool-board';const token=run,model=new window.PoolEngine();
- const canvas=document.createElement('canvas');canvas.width=640;canvas.height=340;canvas.tabIndex=0;canvas.setAttribute('aria-label',l('Pool table: drag to aim, then Shoot','Mesa de billar: arrastra para apuntar y pulsa Tirar'));
- const toolbar=document.createElement('div');toolbar.className='pool-toolbar';board.appendChild(toolbar);board.appendChild(canvas);
- const c=canvas.getContext('2d');if(!c){extraEnd(l('The table could not load. Try another browser.','No se pudo cargar la mesa. Prueba otro navegador.'));return}
- let angle=0,dragging=false,frameId=0,lastTime=null,ended=false,lastStatus='';
- function slider(en,es,value,min,max){const label=document.createElement('label');const text=document.createElement('span');text.textContent=l(en,es);label.appendChild(text);const el=document.createElement('input');el.type='range';el.min=min;el.max=max;el.value=value;label.appendChild(el);toolbar.appendChild(label);return el}
- const power=slider('Power','Fuerza',65,10,100),direction=slider('Aim angle','Ángulo',0,-180,180);
- const shoot=btn(l('Shoot','Tirar'),()=>{if(model.shoot(angle,Number(power.value))){lastTime=null;update();schedule()}},toolbar);
- const hint=document.createElement('p');hint.className='pool-hint';hint.textContent=l('Drag on the table to aim. The line points where the white ball will travel. Use the angle slider for fine adjustments.','Arrastra sobre la mesa para apuntar. La línea indica hacia dónde irá la bola blanca. Usa el ángulo para ajustar.');board.appendChild(hint);
- function aim(e){if(model.moving||finished)return;const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;const x=(e.clientX-rect.left)*640/rect.width,y=(e.clientY-rect.top)*340/rect.height;const cue=model.balls[0];if(Math.hypot(x-cue.x,y-cue.y)<4)return;angle=Math.atan2(y-cue.y,x-cue.x);direction.value=String(Math.round(angle*180/Math.PI));draw()}
- canvas.onpointerdown=e=>{if(model.moving||finished)return;dragging=true;canvas.setPointerCapture?.(e.pointerId);aim(e)};
- canvas.onpointermove=e=>{if(dragging)aim(e)};
- canvas.onpointerup=e=>{if(dragging)aim(e);dragging=false};canvas.onpointercancel=()=>dragging=false;
- direction.oninput=()=>{if(model.moving||finished)return;angle=Number(direction.value)*Math.PI/180;draw()};
- canvas.onkeydown=e=>{if(model.moving||finished)return;if(['ArrowLeft','ArrowRight',' ','Enter'].includes(e.key))e.preventDefault();if(e.key==='ArrowLeft'||e.key==='ArrowRight'){angle+=(e.key==='ArrowLeft'?-.02:.02);angle=Math.atan2(Math.sin(angle),Math.cos(angle));direction.value=String(Math.round(angle*180/Math.PI));draw()}else if(e.key===' '||e.key==='Enter')shoot.click()};
- function update(){const text=l('Pocketed: ','Embocadas: ')+model.pocketed+'/6 • '+l('Shots: ','Tiros: ')+Math.min(model.shots,20)+'/20';if(text!==lastStatus){status.textContent=text;lastStatus=text}shoot.disabled=model.moving||finished;direction.disabled=model.moving||finished;power.disabled=model.moving||finished;}
- function draw(){
-  c.clearRect(0,0,640,340);c.fillStyle='#6b452c';c.fillRect(0,0,640,340);c.fillStyle='#116c58';c.fillRect(20,20,600,300);c.fillStyle='#071b22';window.PoolGeometry.pockets.forEach(([x,y])=>{c.beginPath();c.arc(x,y,21,0,Math.PI*2);c.fill()});
-  const cue=model.balls[0];if(!model.moving&&!finished){const dx=Math.cos(angle),dy=Math.sin(angle);const tx=dx>0?(611-cue.x)/dx:dx<0?(29-cue.x)/dx:Infinity,ty=dy>0?(311-cue.y)/dy:dy<0?(29-cue.y)/dy:Infinity;let distance=Math.max(0,Math.min(tx,ty));for(const b of model.balls.slice(1)){if(b.out)continue;const x=b.x-cue.x,y=b.y-cue.y,projection=x*dx+y*dy,side=x*x+y*y-projection*projection;if(projection>0&&side<324)distance=Math.min(distance,projection-Math.sqrt(324-side))}c.strokeStyle='#fff';c.lineWidth=2;c.setLineDash([7,6]);c.beginPath();c.moveTo(cue.x,cue.y);c.lineTo(cue.x+dx*distance,cue.y+dy*distance);c.stroke();c.setLineDash([]);c.fillStyle='#fff9';c.beginPath();c.arc(cue.x+dx*distance,cue.y+dy*distance,9,0,Math.PI*2);c.fill();}
-  model.balls.filter(b=>!b.out).forEach((b,i)=>{c.fillStyle=b.color;c.beginPath();c.arc(b.x,b.y,9,0,Math.PI*2);c.fill();c.strokeStyle='#132c39';c.lineWidth=1;c.stroke();if(!b.cue){c.fillStyle='#122337';c.font='bold 10px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(String(b.number),b.x,b.y)}});
- }
- function schedule(){if(!frameId&&model.moving)frameId=requestAnimationFrame(frame)}
- function frame(timestamp){frameId=0;if(token!==run||game!=='pool')return;const dt=lastTime===null?1/60:(timestamp-lastTime)/1000;lastTime=timestamp;model.advance(dt);if(!model.moving){if(model.lastScratch)feedback.textContent=l('Scratch: one extra shot used. White ball reset.','Falta: se consume un tiro extra. La bola blanca vuelve a la mesa.');if(model.result&&!ended){ended=true;if(model.result==='win')win(25,l('All six balls pocketed!','¡Embocaste las seis bolas!'));else extraEnd(l('No shots left.','No quedan tiros.'));}}update();draw();schedule();}
- onCleanup(()=>{cancelAnimationFrame(frameId);canvas.onpointerdown=canvas.onpointermove=canvas.onpointerup=canvas.onpointercancel=canvas.onkeydown=null});update();draw();
-}
 function cardGame(){
  const colors=['🔴','🔵','🟢','🟡'];let deck=shuffle(colors.flatMap(color=>[0,1,2,3,4,5,6,7,8,9,'+2','⏭'].flatMap(value=>[{color,value},{color,value}])).concat(Array.from({length:4},()=>({color:'🌈',value:'★'}))));
  const take=()=>{if(!deck.length){deck=shuffle(discard.splice(0,discard.length-1))}return deck.pop()};

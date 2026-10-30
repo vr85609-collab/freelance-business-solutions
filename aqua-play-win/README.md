@@ -1,84 +1,39 @@
-# Aquaemoticons Play & Win — Aqua Arcade (prototype)
+# Aqua Arcade
 
-An installable, offline-capable browser mini-game arcade with twelve games, optional daily featured challenges, virtual stars, browser-local progress, and simulated rewards.
+A small, bilingual, installable arcade for Aquaemoticons. Run with Node 20 or newer:
 
-## Games — two choices in each category
-| Category | Option 1 | Option 2 |
-|---|---|---|
-| Strategy | Tic-Tac Tactics (minimax CPU) | Connect Four (computer opponent) |
-| Memory | Memory Match (8 pairs) | Word Recall (remember 5 words) |
-| Concentration | Pattern Pulse (growing sequences) | Number Sprint (tap 1–16 in order) |
-| Logic | Light Switch (Lights Out puzzle) | Codebreaker (3-digit deduction game) |
-| Planning | Merge 2048 (combine tiles) | Slide Puzzle (3x3 number slide) |
-| Luck | Bubble Guess (server-checked) | Higher or Lower (5 guesses) |
-
-12 playable prototypes in total. Games are intended to work on mobile and desktop. Test every game on the deployed Node server before linking from your storefront.
-
-## Return-play features
-- Rotating daily featured game, with a **one-time virtual 5-star bonus** upon completion.
-- Virtual stars awarded after completing puzzles, including bonus for efficiency where applicable.
-- Completed games and distinct days played.
-- Local progress in the browser (localStorage); no penalties for missed days, no pressure-based streak loss, no purchases, and no random paid rewards.
-- No customer accounts or cross-device syncing in this prototype.
-
-## Offline play / install on phone
-1. Visit https://aquaemoticons-play-win.onrender.com once while online, allow all game files to load, and stay on the site until the service worker has installed.
-2. On Android Chrome, use the Install app option (browser menu or in-page button when available).
-3. On iPhone Safari, use Share → Add to Home Screen, then open the saved app at least once while online.
-4. Turn on airplane mode and reopen the installed Aqua Arcade. The game UI and all 12 games are designed to run offline.
-5. Virtual stars and scores remain on this device. **Offline scores and offline practice are not trusted for discounts and will not be automatically converted into coupons on reconnect.**
-6. If offline reopening fails on the first try, reconnect once, reopen the app online, then repeat. Browser storage can be cleared by the OS or by the user, so offline files are not guaranteed forever.
-
-Offline limitations: Shopify's storefront and checkout, customer sign-in, verification, and redemption always require internet. The arcade cannot create live Shopify discount codes offline. Bubble Guess falls back to a clearly labeled offline practice session when the server is unreachable. On a mid-session disconnect, it starts a fresh local round and does not carry over server results.
-
-## Real discount integration — NOT ACTIVE
-Proposed policy: 5/10/15 percent tiers; $25 minimum order; one claim per verified Shopify customer each calendar week; unique one-use codes; time-limited codes; no discount stacking. These are proposals and no Shopify codes have been created.
-
-Do **not** issue live discounts from client-only stars, offline scores or localStorage. Before launch:
-- Establish Shopify customer authentication and a trusted server-side game completion record.
-- Add a persistent store (for example Postgres) with unique customer-week claim constraints and completed session identifiers; Render service memory is not durable.
-- Set up securely managed Shopify Admin API credentials on the server. Never place tokens in frontend JavaScript, GitHub, or service worker caches.
-- Call Shopify's discount API only after verifying identity, eligibility, replay protections, weekly limits and concurrent claim handling; enforce validity window, minimum purchase, one-time use and non-combination.
-- Log claims minimally and test checkout and cancellations. Use email/marketing consent separately; winning a game must not opt anyone into advertising.
-- The `GET /api/rewards/status` endpoint makes the disabled state clear; no redemption API is enabled.
-
-## Run locally
-Requires Node.js 20+; no dependencies.
-```bash
+```
+npm ci
+npm test
 npm start
 ```
-Visit http://localhost:3000 and select a game.
 
-## Shopify integration status
-The storefront at https://aquaemoticons.com has **not been modified**. The prototype does not generate real Shopify discount codes. Bubble Guess only *simulates* tiers of 5%, 10%, or 15% off, with a suggested minimum purchase of $25; these are not redeemable.
+Open http://localhost:3000. No external assets or runtime packages are needed by the application server. `linkedom` is used only by the development tests.
 
-For real rewards later, build:
-1. Login / verified customer identity and accessible promotional terms.
-2. Server-authoritative completion records for all games (currently only Bubble Guess sends guesses to the server); other games and virtual stars are client-side and **must not be trusted** for real rewards.
-3. Persistent database, one claim per customer per qualifying period, bot defenses and rate limits.
-4. Secure Shopify Admin API token on the server only; create unique expiring customer-restricted codes with minimum purchase, use limits, and non-stacking rules.
-5. Test checkout and customer support flows before offering any real discount.
-6. Add the remaining original games when their source is available and deploy to a standalone HTTPS host (e.g. Vercel with appropriate Node hosting or a compatible Node server).
+## Library
 
-## Notes
-This is a prototype, not a verified production deployment. The twelve-game browser UI has been committed to the `aquaemoticons-play-win` development branch of the `vr85609-collab/freelance-business-solutions` repository in the `aqua-play-win/` folder. It is intentionally isolated from the repository's `main` branch.
+The arcade has 36 games. Pool was removed and replaced with 20 new games:
 
-## Additional games
+Mini Sudoku, Minesweeper, Reversi, Five in a Row, Dots & Boxes, Hidden Fleet, Picture Logic, Maze Escape, Crate Keeper, Pipe Connect, Knight’s Trail, Eight Queens, Word Ladder, Letter Shuffle, Hidden Word, Make 24, Gem Swap, Peg Jump, Tower Transfer, and Nim Tactics.
 
-The catalog now contains 17 games, including five original additions:
+Existing games: Bubble Guess, Tic-Tac Tactics, Memory Match, Pattern Pulse, Light Switch, Merge 2048, Connect Four, Word Recall, Number Sprint, Codebreaker, Slide Puzzle, Higher or Lower, Color Clash, Block Garden, Word Search, and Word Tiles.
 
-- Pocket Pool: solo six-ball pocket challenge, aim preview, adjustable power, collisions, scratches, and a 20-shot limit. 25 virtual stars for clearing the table.
-- Color Clash: UNO-style color/number matching against a computer, with wilds, skip, and draw-two cards. No stacking. 20 virtual stars for an empty hand.
-- Block Garden: place three-piece trays on an 8×8 board; clear six rows/columns for 25 virtual stars. Pieces do not rotate.
-- Word Search: six generated words on a 9×9 grid, including diagonal/backward placements. Select both endpoints. 20 virtual stars for finding all six.
-- Word Tiles: a Scrabble-style rack challenge using a visible curated word bank, one point per letter plus three for words of five or more letters. Reach 30 points in eight turns for 25 virtual stars. This is not a full Scrabble board or unrestricted dictionary.
+The home screen shows 12 compact cards at a time, with Show more, category filters, English/Spanish search, favorites, and the last 12 recently played games. Favorites and recent history use `aqua_library_v1` in localStorage. Clearing browser data resets these preferences. Game progress continues to use `aqua_arcade_v2`, preserving existing stars.
 
-All five work offline after the updated application has been loaded and cached online. English/Spanish guides, visual examples, local star rewards, and dark styling are included. Word content is generated using the language selected when a game starts. Real Shopify redemption remains disabled.
+The play screen hides home content and keeps the objective, board, and controls visible. Detailed rules are available in a collapsed disclosure and in the existing help dialog. Light/dark themes, English/Spanish, keyboard controls where applicable, and reduced-motion styling are supported.
 
-## Debugging and regression tests
+## Rules and rewards
 
-Run `npm ci` and `npm test` from `aqua-play-win`. The suite contains 24 checks covering all 17 games, including generated word-search and word-tile wins in both languages, computer card games, solving the logic/slide puzzles, round completion, navigation, timer cancellation, storage failures, and cached release consistency.
+The 20 added games each award 20 virtual stars on a win. Help explains the exact rules and objective. CPU games have explicit win/loss/draw states. Undo is available for exploratory puzzles. Make 24 uses a small arithmetic parser without eval. Generated mazes are connected; supplied puzzles have solution tests.
 
-Pool uses a fixed-step physics engine with refresh-rate equivalence tests (30/60/120 Hz), collision and six-pocket tests, scratch recovery, double-shot prevention, terminal shot limits, and animation cleanup. Drag on the table or use the angle slider; power and Shoot stay immediately above the table. Idle tables do not run an animation loop.
+Stars are local entertainment points, not money. Bubble Guess discounts are examples only. Actual Shopify redemption remains disabled pending identity verification, persistent one-use claim records, weekly limits, and server-side integration. Do not use local scores as proof for real rewards. See REWARDS_SETUP.md and rewards-policy.json.
 
-All games expose Restart game. Navigation invalidates prior sessions, removes appended boards, cancels pending callbacks and input listeners, and disables finished rounds. Offline files are served from a fully installed release to avoid combining old scripts with new HTML. An Update app button appears when an already-controlled page receives a new release.
+## Offline and updates
+
+The service worker precaches the complete application, including new games, catalog, and stylesheet. It serves a complete installed release to prevent mixing incompatible HTML and scripts. After first loading online, the games run offline; Bubble Guess falls back to local practice. The Update app button appears when an already controlled page receives a new release. Offline wins cannot be redeemed for discounts.
+
+## Validation
+
+`npm test` checks the 36-game registry and lifecycle, the retained games, every new game, puzzle solvability, both word-game languages, arithmetic parsing, CPU round completion, valid/invalid moves, favorites/search/category/pagination/recent navigation, language switching, blocked storage, timer cancellation, duplicate rewards, and offline release consistency.
+
+All changes stay on the `aquaemoticons-play-win` branch. Render automatically deploys this branch using the `aqua-play-win` directory. Other business site files and the main branch are separate.

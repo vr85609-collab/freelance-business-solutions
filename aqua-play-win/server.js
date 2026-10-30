@@ -26,7 +26,9 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='GET'&&(url.pathname==='/'||url.pathname==='/index.html')){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, must-revalidate','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'"});res.end(await readFile(new URL('./public/index.html',import.meta.url)));return}
  if(req.method==='GET'&&url.pathname==='/theme.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/theme.js',import.meta.url)));return}
  const offlineAssets={
-  '/pool-engine.js':['./public/pool-engine.js','text/javascript; charset=utf-8'],
+  '/new-games.js':['./public/new-games.js','text/javascript; charset=utf-8'],
+  '/catalog.js':['./public/catalog.js','text/javascript; charset=utf-8'],
+  '/arcade.css':['./public/arcade.css','text/css; charset=utf-8'],
   '/extra-games.js':['./public/extra-games.js','text/javascript; charset=utf-8'],
   '/sw.js':['./public/sw.js','text/javascript; charset=utf-8'],
   '/offline.js':['./public/offline.js','text/javascript; charset=utf-8'],

@@ -39,7 +39,7 @@ public final class OfflineArcadeTest {
     private void ready(ActivityScenario<MainActivity> scene) throws Exception {
         long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
         while (System.nanoTime() < until) {
-            if ("true".equals(js(scene, "typeof keys !== 'undefined' && Object.keys(keys).length === 36 && !!window.AquaCatalog && !!window.AquaLanguage"))) return;
+            if ("true".equals(js(scene, "typeof keys !== 'undefined' && Object.keys(keys).length === 36 && !!window.AquaCatalog && !!window.AquaLanguage && !!window.AquaExperience"))) return;
             Thread.sleep(100);
         }
         fail("Bundled arcade did not initialize");
@@ -106,6 +106,7 @@ public final class OfflineArcadeTest {
             Thread.sleep(500);
             ready(scene);
             js(scene, "window.__arcadeErrors=[]; window.addEventListener('error',e=>window.__arcadeErrors.push(e.message)); if(document.documentElement.dataset.theme==='dark')document.querySelector('#themeToggle').click(); home(); window.scrollTo(0,0);");
+            assertEquals("true", js(scene, "(()=>{const b=document.querySelector('#effectsToggle'); if(document.documentElement.dataset.effects!=='full')b.click(); return b.getAttribute('aria-pressed')==='false' && document.querySelector('#soundToggle').getAttribute('aria-pressed')==='false'})()"));
             screenshot(scene, "01-home-en");
             js(scene, "document.querySelector('#catalog').scrollIntoView();");
             screenshot(scene, "08-illustrated-library");
@@ -142,9 +143,10 @@ public final class OfflineArcadeTest {
             js(scene, "open('wordsearch');");
             screenshot(scene, "06-word-search-es-dark");
             js(scene, "home();");
+            assertEquals("true", js(scene, "document.querySelector('#effectsToggle').click(); document.documentElement.dataset.effects==='light' && document.querySelector('#effectsToggle').textContent.includes('Efectos ligeros')"));
             scene.recreate();
             ready(scene);
-            assertEquals("true", js(scene, "progress.stars===20 && progress.finished===1 && window.AquaLanguage.language==='es' && document.documentElement.dataset.theme==='dark'"));
+            assertEquals("true", js(scene, "progress.stars===20 && progress.finished===1 && window.AquaLanguage.language==='es' && document.documentElement.dataset.theme==='dark' && document.documentElement.dataset.effects==='light'"));
             screenshot(scene, "07-home-es-dark");
         }
     }

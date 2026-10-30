@@ -18,3 +18,5 @@ This Android edition does not offer coupons, cash, physical prizes, paid points,
 No advertising SDK or analytics SDK is included.
 Support: aquaemoticonsllc@gmail.com
 Category suggestion: Games / Puzzle
+
+Privacy policy URL: https://aquaemoticons-play-win.onrender.com/android-privacy

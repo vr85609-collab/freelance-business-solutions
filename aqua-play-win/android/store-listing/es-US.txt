@@ -9,3 +9,5 @@ Las estrellas son virtuales y se guardan en tu dispositivo. Esta edición Androi
 
 No incluye SDK de publicidad ni de análisis.
 Soporte: aquaemoticonsllc@gmail.com
+
+Privacy policy URL: https://aquaemoticons-play-win.onrender.com/android-privacy

@@ -104,3 +104,22 @@ test('web rewards client records the actual clicked moves and submits a replay i
  assert.equal(submitted.data.events.length,16);assert(!('stars' in submitted.data));assert(!('customerId' in submitted.data));
  const {verifyReplay}=await import('../rewards/replay.js');assert((await verifyReplay({game:'focus',seed:1234567,language:'en',events:submitted.data.events})).won);
 });
+
+test('Verified 2048 ignores help/editing arrows and cancelled swipes in its replay transcript',async()=>{
+ const h=setup();h.window.__requests=[];
+ h.run(`navigator.onLine=true;globalThis.performance={now:()=>22000};globalThis.fetch=async(path,options={})=>{
+  window.__requests.push({path,data:options.body?JSON.parse(options.body):null});
+  const body=path.endsWith('/status')?{accountsReady:true,enabled:true,verifiedGames:['twenty']}:path.endsWith('/me')?{balance:0,stars:0,wins:0,days:0,streak:0,rewards:[],claims:[]}:path.endsWith('/start')?{id:'test-session',seed:1234567}:{credited:false};return {ok:true,json:async()=>body};
+ };`);
+ h.run(fs.readFileSync(__dirname+'/../public/rewards.js','utf8'));await new Promise(r=>setImmediate(r));await h.run("open('twenty')");
+ const state=()=>h.buttons().map(b=>b.dataset.number).join();const initial=state();
+ const event=(target,type,properties)=>{const e=new h.window.Event(type,{bubbles:true,cancelable:true});Object.assign(e,properties);target.dispatchEvent(e)};
+ h.run("showHelp('twenty')");event(h.document.querySelector('#helpClose'),'keydown',{key:'ArrowLeft'});h.run('closeHelp()');
+ const input=h.document.createElement('input');h.document.body.appendChild(input);event(input,'keydown',{key:'ArrowLeft'});
+ event(h.document,'keydown',{key:'ArrowLeft',altKey:true});
+ const board=h.document.querySelector('#board');event(board,'touchstart',{touches:[{clientX:150,clientY:100}]});event(board,'touchcancel',{});event(board,'touchend',{changedTouches:[{clientX:20,clientY:100}]});
+ assert.equal(state(),initial,'ignored events preserve tiles');
+ event(h.document,'keydown',{key:'ArrowLeft'});assert.notEqual(state(),initial);
+ h.run("win(35,'Recorder fixture')");await new Promise(r=>setImmediate(r));
+ const proof=h.window.__requests.find(r=>r.path.endsWith('/finish'));assert(proof);assert.deepEqual(JSON.parse(JSON.stringify(proof.data.events)).map(e=>({kind:e.kind,value:e.value})),[{kind:'key',value:'ArrowLeft'}]);
+});

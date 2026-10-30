@@ -49,10 +49,11 @@
  document.addEventListener('click',e=>{const el=e.target.closest?.('button');if(!el||!session)return;const area=el.closest('#board,#gameControls');if(!area)return;record({kind:'click',area:area.id,index:[...area.querySelectorAll('button,input,select')].indexOf(el)})},true);
  document.addEventListener('input',e=>{const el=e.target,area=el.closest?.('#board,#gameControls');if(area&&session)record({kind:'input',area:area.id,index:[...area.querySelectorAll('button,input,select')].indexOf(el),value:el.value})},true);
  document.addEventListener('change',e=>{if(e.target.tagName==='SELECT'){const area=e.target.closest('#board,#gameControls');if(area)record({kind:'input',area:area.id,index:[...area.querySelectorAll('button,input,select')].indexOf(e.target),value:e.target.value})}},true);
- document.addEventListener('keydown',e=>{if(session&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)&&!['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))record({kind:'key',value:e.key})},true);
+ document.addEventListener('keydown',e=>{if(session&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)&&canUseGameKeyboard(e))record({kind:'key',value:e.key})},true);
  let touch=null;
- board.addEventListener('touchstart',e=>{if(session?.game==='twenty')touch=[e.touches[0].clientX,e.touches[0].clientY]},true);
- board.addEventListener('touchend',e=>{if(!touch||session?.game!=='twenty')return;const dx=e.changedTouches[0].clientX-touch[0],dy=e.changedTouches[0].clientY-touch[1];touch=null;if(Math.max(Math.abs(dx),Math.abs(dy))>=25)record({kind:'key',value:Math.abs(dx)>Math.abs(dy)?(dx>0?'ArrowRight':'ArrowLeft'):(dy>0?'ArrowDown':'ArrowUp')})},true);
+ board.addEventListener('touchstart',e=>{touch=session?.game==='twenty'&&e.touches.length===1?[e.touches[0].clientX,e.touches[0].clientY]:null},true);
+ board.addEventListener('touchcancel',()=>{touch=null},true);
+ board.addEventListener('touchend',e=>{if(!touch||!e.changedTouches.length||session?.game!=='twenty')return;const dx=e.changedTouches[0].clientX-touch[0],dy=e.changedTouches[0].clientY-touch[1];touch=null;if(Math.max(Math.abs(dx),Math.abs(dy))>=25)record({kind:'key',value:Math.abs(dx)>Math.abs(dy)?(dx>0?'ArrowRight':'ArrowLeft'):(dy>0?'ArrowDown':'ArrowUp')})},true);
  win=function(stars,note){const proof=session;const already=finished;originalWin(stars,note);if(already||!proof)return;
   // Let the current input event finish dispatching before freezing its transcript.
   Promise.resolve().then(()=>{if(session===proof)session=null;return api('finish',{id:proof.id,events:proof.events.map(e=>({...e}))})}).then(result=>{say(result.credited?'Verified win: +'+result.earned+' reward points.':result.reason);refresh()}).catch(e=>say(e.message+' Practice stars are still saved.'));

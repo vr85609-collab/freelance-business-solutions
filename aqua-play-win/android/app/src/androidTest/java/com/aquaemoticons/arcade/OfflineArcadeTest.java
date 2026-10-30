@@ -118,7 +118,15 @@ public final class OfflineArcadeTest {
                 js(scene, "open('" + id + "');");
                 assertEquals(id + " opens", "true", js(scene, "document.body.dataset.mode==='playing' && document.querySelector('#gameTitle').textContent.length>0"));
                 if (id.equals("gems")) screenshot(scene, "09-gem-swap-en");
-                if (id.equals("twenty")) screenshot(scene, "02-merge-2048-en");
+                if (id.equals("twenty")) {
+                    String before = js(scene, "document.querySelector('#board').innerHTML + document.querySelector('#playStatus').textContent");
+                    js(scene, "showHelp('twenty');");
+                    InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_LEFT);
+                    InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_RIGHT);
+                    js(scene, "closeHelp();");
+                    assertEquals("Help arrows must not move 2048 tiles", before, js(scene, "document.querySelector('#board').innerHTML + document.querySelector('#playStatus').textContent"));
+                    screenshot(scene, "02-merge-2048-en");
+                }
                 if (id.equals("wordsearch")) screenshot(scene, "03-word-search-en");
                 if (id.equals("blocks")) screenshot(scene, "04-block-garden-en");
                 if (id.equals("cards")) screenshot(scene, "05-color-clash-en");

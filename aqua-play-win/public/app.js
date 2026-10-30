@@ -21,6 +21,7 @@ function save(){try{localStorage.setItem(storeKey,JSON.stringify(progress))}catc
 function dailyGame(){const date=today();let hash=[...date].reduce((a,c)=>a*31+c.charCodeAt(0),0);return ['memory','tictac','sequence','lights','twenty'][Math.abs(hash)%5]}
 function renderDaily(){const d=today(),done=!!progress.daily[d];$('#dailyBadge').textContent=done?'✓ Completed today':'Available today';$('#dailyDescription').textContent=(done?'Nicely done! You can replay whenever you want. ':'Today’s pick: '+keys[dailyGame()]+'. ')+'No penalty for missing a day.';$('#dailyStart').textContent=done?'Play it again':'Try daily challenge'}
 function win(stars=5,note='Challenge complete!'){if(finished)return;finished=true;stopInputs();progress.stars+=stars;progress.finished++;if(!progress.dates.includes(today()))progress.dates.push(today());if(dailyMode&&!progress.daily[today()]){progress.daily[today()]=true;progress.stars+=5;note+=' Daily challenge bonus: 5 stars!'}save();feedback.textContent='🎉 '+note+' +'+stars+' stars';btn('Play again',()=>open(game,dailyMode));btn('Explore games',home)}
+function canUseGameKeyboard(e){return !document.getElementById('helpDialog')?.open&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.target?.closest?.('input,select,textarea,[contenteditable]:not([contenteditable="false"])')}
 function makeBoard(c,klass=''){board.className='board '+klass;c.forEach((v,i)=>{let b=document.createElement('button');b.textContent=v;b.dataset.index=i;board.appendChild(b)});return [...board.children]}
 function home(){leaveGame();game=null;clean();$('#play').classList.add('hidden');$('#catalog').classList.remove('hidden');document.body.dataset.mode='home'}
 function open(name,asDaily=false){if(!keys[name])return;leaveGame();game=name;dailyMode=asDaily;finished=false;clean();$('#play').classList.remove('hidden');$('#catalog').classList.add('hidden');document.body.dataset.mode='playing';document.body.dataset.game=name;$('#gameTitle').textContent=keys[name];$('#genre').textContent=asDaily?'☀️ Daily Challenge':'🎮 Free Play';$('#instructions').textContent=gameHelp[name]?.win||tips[name]||'';updateQuickGuide(name);document.querySelector('#rulesDetails')?.removeAttribute('open');window.AquaCatalog?.record(name);$('#play').scrollIntoView({block:'start',behavior:'instant'});({bubbles,tictac,memory,sequence,lights,twenty,connect,recall,focus,code,slider,higher,...extraGames}[name])()}
@@ -159,17 +160,18 @@ function twenty(){
  btn('← Move all tiles LEFT',()=>move('left'));
  btn('↓ Move all tiles DOWN',()=>move('down'));
  btn('→ Move all tiles RIGHT',()=>move('right'));
- const handler=e=>{if(game!=='twenty')return;const dir={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[e.key];if(dir){e.preventDefault();move(dir)}};
+ const handler=e=>{if(game!=='twenty'||!canUseGameKeyboard(e))return;const dir={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[e.key];if(dir){e.preventDefault();move(dir)}};
  document.addEventListener('keydown',handler,{signal:controller.signal});
  let touch=null;
- board.addEventListener('touchstart',e=>{touch=[e.touches[0].clientX,e.touches[0].clientY]},{passive:true,signal:touchController.signal});
+ board.addEventListener('touchstart',e=>{touch=e.touches.length===1?[e.touches[0].clientX,e.touches[0].clientY]:null},{passive:true,signal:touchController.signal});
  board.addEventListener('touchend',e=>{
-  if(!touch)return;
+  if(!touch||!e.changedTouches.length)return;
   const dx=e.changedTouches[0].clientX-touch[0],dy=e.changedTouches[0].clientY-touch[1];
   touch=null;
   if(Math.max(Math.abs(dx),Math.abs(dy))<25)return;
   move(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));
  },{passive:true,signal:touchController.signal});
+ board.addEventListener('touchcancel',()=>{touch=null},{passive:true,signal:touchController.signal});
  show();
 }
 let touchHandlerController;function twentyTouchController(){if(touchHandlerController)touchHandlerController.abort();touchHandlerController=new AbortController();return touchHandlerController}

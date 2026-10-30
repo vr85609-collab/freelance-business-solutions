@@ -13,9 +13,11 @@
    navigator.serviceWorker.addEventListener('controllerchange',()=>{
      if(!wasControlled||document.getElementById('updateApp'))return;
      const refresh=document.createElement('button');refresh.type='button';refresh.className='action';refresh.id='updateApp';refresh.textContent='Update app';
-     refresh.onclick=()=>location.reload();document.querySelector('.offline-panel .topline')?.appendChild(refresh);
+     const notice=document.createElement('aside');notice.className='app-update';notice.setAttribute('role','status');
+     const text=document.createElement('span');text.textContent='An update is ready. Finish your game, then update.';notice.append(text,refresh);
+     refresh.onclick=()=>location.reload();document.querySelector('.app-header')?.after(notice);
    });
-   window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(err=>console.warn('Offline setup unavailable:',err)));
+   window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(err=>console.warn('Offline setup unavailable:',err)));
  }
  window.addEventListener('beforeinstallprompt',event=>{
    event.preventDefault();deferredPrompt=event;if(install)install.hidden=false;

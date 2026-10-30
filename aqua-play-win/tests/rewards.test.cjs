@@ -61,7 +61,7 @@ test('durable rewards transactions, gift approval, retry and deletion',async t=>
 
 test('Android package bundles all 36 actual games and excludes reward client and sensitive permissions',()=>{
  const path=__dirname+'/../android/app/src/main/assets/',html=fs.readFileSync(path+'index.html','utf8'),manifest=fs.readFileSync(__dirname+'/../android/app/src/main/AndroidManifest.xml','utf8');
- assert(!html.includes('rewards.js'));assert(!html.includes('id="rewardsPanel"'));assert(!fs.existsSync(path+'rewards.js'));assert(!manifest.includes('uses-permission'));assert(fs.existsSync(path+'new-games.js'));assert(!fs.readFileSync(path+'app.js','utf8').includes('Illustrative '));
+ assert(!html.includes('rewards.js'));assert(!html.includes('offline.js'));assert(!html.includes('id="rewardsPanel"'));assert(!fs.existsSync(path+'rewards.js'));assert(!manifest.includes('uses-permission'));assert(fs.existsSync(path+'new-games.js'));assert(!fs.readFileSync(path+'app.js','utf8').includes('Illustrative '));
 });
 
 test('multiple real game engines replay consistently, including Spanish word games and keyboard moves',async()=>{

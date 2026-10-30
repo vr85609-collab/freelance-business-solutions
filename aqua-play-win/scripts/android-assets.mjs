@@ -6,7 +6,7 @@ const files=['app.js','extra-games.js','new-games.js','catalog.js','arcade.css',
 for(const file of files)await copyFile(new URL(file,source),new URL(file,target));
 const {document}=parseHTML(await readFile(new URL('index.html',source),'utf8'));
 document.querySelector('#rewardsPanel')?.remove();document.querySelector('#verifiedGameMessage')?.remove();
-for(const script of document.querySelectorAll('script'))if(['/rewards.js','/offline.js'].includes(script.getAttribute('src')))script.remove();
+for(const script of document.querySelectorAll('script'))if(['/rewards.js','/offline.js'].includes((script.getAttribute('src')||'').split('?')[0]))script.remove();
 for(const link of document.querySelectorAll('link[rel="manifest"]'))link.remove();
 document.querySelector('title').textContent='Aqua Arcade';
 const status=document.querySelector('#connectionStatus');if(status)status.textContent='Offline arcade · Virtual stars only';

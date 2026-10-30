@@ -9,3 +9,4 @@ android/app/src/main/assets/
 *.jks
 *.keystore
 *.p12
+android/device-screenshots/

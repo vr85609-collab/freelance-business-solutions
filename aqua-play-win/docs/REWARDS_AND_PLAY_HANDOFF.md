@@ -66,3 +66,25 @@ Sources checked October 30, 2026:
 
 ## Verified build results
 GitHub Actions run 41028216036 passed tests against PostgreSQL 17 and Android lint, debug APK and unsigned release AAB generation. The Android source has no real-value rewards. Subsequent changes to web-only capacity reservation do not change bundled Android assets. Native device testing, release signing and Play submission remain outstanding.
+
+## Continued Android preparation
+The `android-device` CI job boots an API 36 Android emulator and runs the actual packaged WebView. It opens all 36 games, completes Number Sprint through its inputs, checks saved stars after activity recreation, switches English/Spanish and light/dark mode, and captures seven unmodified device screenshots. Results and screenshots are uploaded as `aqua-arcade-device-review`. This is a smoke check, not a substitute for physical-device testing or playing every game to completion. The app itself has no Internet permission. Emulator access to Google infrastructure does not add network permission to the app.
+
+The Android packaging script removes website service-worker/installer scripts, including versioned URLs, to avoid missing resources in the bundled app.
+
+### Signing an upload bundle
+The release build optionally reads four environment variables from the release operator's secure environment:
+
+- `AQUA_UPLOAD_STORE_FILE`: absolute path to the existing upload keystore.
+- `AQUA_UPLOAD_STORE_PASSWORD`: keystore password.
+- `AQUA_UPLOAD_KEY_ALIAS`: upload key alias.
+- `AQUA_UPLOAD_KEY_PASSWORD`: upload key password.
+
+Supply all four or none. Partial credentials fail the build; no credentials produce an unsigned review bundle. Do not paste secrets in chat, commit them, or run a command that prints them. Use a local secure terminal or your release secret manager. Build with `gradle -p android :app:bundleRelease`; verify the output signature with `jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab`. Compare the certificate fingerprint with your Play Console upload certificate. A new app may first need Play App Signing enrollment and an upload key chosen by the owner. No upload key is generated or configured by this change, and no automatic Play publishing is enabled.
+
+Current live infrastructure was read again October 30: the deployed service still uses branch `aquaemoticons-play-win`, and the connected Render workspace has no PostgreSQL instance. The implementation remains in the draft pull request. Real rewards cannot be activated until the production database, installed Shopify app credentials, approved gift variants and checkout checks are in place.
+
+Additional implementation references:
+- https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner
+- https://developer.android.com/build/build-variants
+- https://github.com/ReactiveCircus/android-emulator-runner

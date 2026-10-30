@@ -1,4 +1,4 @@
-const CACHE='aqua-arcade-offline-v10';
+const CACHE='aqua-arcade-offline-v11';
 const ASSETS=['/game-art.svg','/','/index.html','/app.js','/extra-games.js','/new-games.js','/catalog.js','/arcade.css','/theme.js','/language.js','/offline.js','/manifest.webmanifest','/icon.svg','/brand-logo.png','/rewards.js'];
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting()));
@@ -16,7 +16,7 @@ self.addEventListener('fetch',event=>{
   if(url.origin!==self.location.origin)return;
   if(url.pathname.startsWith('/api/')||url.pathname.startsWith('/auth/')||['/rewards-admin','/privacy','/rewards-terms','/delete-account'].includes(url.pathname))return; // Never cache gameplay or future reward API calls.
   // Serve one fully installed release so HTML and game scripts cannot mix versions.
-  if(request.mode==='navigate'){
+  if(request.mode==='navigate'&&(url.pathname==='/'||url.pathname==='/index.html')){
     event.respondWith(caches.open(CACHE).then(async cache=>
       await cache.match('/index.html')||await fetch(request)));
     return;

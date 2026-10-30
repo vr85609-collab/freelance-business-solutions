@@ -1,7 +1,7 @@
 # Aqua Arcade rewards and Google Play preparation
 
 Prepared October 30, 2026. Implementation branch: feature/verified-rewards-android.
-**Status: implementation for review; no live Shopify credentials, database migration, real discount, gift order, signing key, Play upload or production activation has been performed.**
+**Status: web code, visible store link and reward rules deployed October 30. Redemption is DISABLED and accounts are not configured. No runtime Shopify credentials, database migration, real discount, gift order, upload signing key or Play upload has been performed.**
 
 ## What is implemented
 - Verified Shopify customer identity through an HMAC-verified app proxy, a one-time login exchange bound to an HttpOnly state cookie, and an eight-hour secure session cookie.
@@ -65,7 +65,7 @@ Sources checked October 30, 2026:
 - https://shopify.dev/docs/api/admin-graphql/2026-10/mutations/discountCodeBasicCreate
 
 ## Verified build results
-GitHub Actions run 41028216036 passed tests against PostgreSQL 17 and Android lint, debug APK and unsigned release AAB generation. The Android source has no real-value rewards. Subsequent changes to web-only capacity reservation do not change bundled Android assets. Native device testing, release signing and Play submission remain outstanding.
+GitHub Actions run 41090094903 passed all 61 tests against PostgreSQL 17, Android lint, APK/AAB builds and Android 16 instrumentation. Instrumentation opened all 36 games, completed Number Sprint, checked persisted progress and Spanish/dark mode, tapped the visible store link and verified the external browser destination, and captured seven original screenshots. Physical-device testing, release signing and Play submission remain outstanding.
 
 ## Continued Android preparation
 The `android-device` CI job boots an API 36 Android emulator and runs the actual packaged WebView. It opens all 36 games, completes Number Sprint through its inputs, checks saved stars after activity recreation, switches English/Spanish and light/dark mode, and captures seven unmodified device screenshots. Results and screenshots are uploaded as `aqua-arcade-device-review`. This is a smoke check, not a substitute for physical-device testing or playing every game to completion. The app itself has no Internet permission. Emulator access to Google infrastructure does not add network permission to the app.
@@ -82,7 +82,7 @@ The release build optionally reads four environment variables from the release o
 
 Supply all four or none. Partial credentials fail the build; no credentials produce an unsigned review bundle. Do not paste secrets in chat, commit them, or run a command that prints them. Use a local secure terminal or your release secret manager. Build with `gradle -p android :app:bundleRelease`; verify the output signature with `jarsigner -verify -verbose -certs android/app/build/outputs/bundle/release/app-release.aab`. Compare the certificate fingerprint with your Play Console upload certificate. A new app may first need Play App Signing enrollment and an upload key chosen by the owner. No upload key is generated or configured by this change, and no automatic Play publishing is enabled.
 
-Current live infrastructure was read again October 30: the deployed service still uses branch `aquaemoticons-play-win`, and the connected Render workspace has no PostgreSQL instance. The implementation remains in the draft pull request. Real rewards cannot be activated until the production database, installed Shopify app credentials, configured approved gift variants and checkout checks are in place.
+Current live infrastructure was read again October 30: the deployed service still uses branch `aquaemoticons-play-win`, and the connected Render workspace has no PostgreSQL instance. Pull request #1 is merged and the web update is live. The three approved gift variants and disabled-redemption flags are configured on Render. Real rewards still require a production database, installed Shopify app credentials, reviewed cost assumptions and checkout checks.
 
 Additional implementation references:
 - https://developer.android.com/training/testing/instrumented-tests/androidx-test-libraries/runner
@@ -95,3 +95,5 @@ The Shop bath bombs & more link is visible on phone and desktop during browsing 
 Shopify Admin API cannot disclose a separate app’s client secret. The Dev Dashboard opened to Shopify sign-in in this session. Secure owner authentication, app creation/installation with the stated scopes and secure Render secret configuration remain required. Creating or expanding app access requires the owner’s action-time approval. The runtime now supports the 24-hour client-credentials lifecycle instead of requiring manual daily tokens.
 
 Before any real issuance, use controlled test accounts to test the fixed coupons on mixed eligible-product carts and ineligible-product-only carts, the minimum qualifying subtotals, five paid plus one approved gift (also same-scent six-unit carts), no discount on five total units, no multiplied gift with twelve units, wrong-customer rejection, no stacking, expiry, cost pauses and timeout reconciliation. No live checkout or real coupon issuance is claimed.
+
+Deployment verification: Render deploy dep-dbicdiqvcj2c73cgf8bg reached live for merge commit 973b3de2f245c319fb03aa6b53159620ae6e1cda. Direct HTTP checks confirmed the visible store navigation, the new public rules and /api/rewards/status returning enabled=false and accountsReady=false. Shopify secure sign-in was not completed; no client secret was obtained.

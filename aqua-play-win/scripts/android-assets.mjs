@@ -16,7 +16,7 @@ const privacy=document.createElement('a');privacy.href='/privacy.html';privacy.t
 const meta=document.createElement('meta');meta.setAttribute('http-equiv','Content-Security-Policy');meta.setAttribute('content',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:");document.head.appendChild(meta);
 let html=document.toString().replace('Device-only practice stars. Verified store rewards are tracked separately.','Virtual stars. Just for fun.');
 await writeFile(new URL('index.html',target),html);
-await writeFile(new URL('privacy.html',target),'<!doctype html><html lang="en"><meta name="viewport" content="width=device-width"><title>Aqua Arcade privacy</title><h1>Aqua Arcade privacy</h1><p>This offline edition saves practice progress, favorites, language, and theme only on your device. It has no server account, coupons, physical prizes, ads, analytics SDK, or payment system. Clear Android app storage to delete all progress. Store links open externally and the store has its own privacy policy.</p><p>Operator: AquaemoticonsLLC. Contact: aquaemoticonsllc@gmail.com.</p><a href="/index.html">Games</a></html>');
+await copyFile(new URL('android-privacy.html',source),new URL('privacy.html',target));
 // Use exactly the same game code, but remove obsolete illustrative store discounts from the Android UI.
 let app=await readFile(new URL('app.js',target),'utf8');
 app=app.replace("reward.textContent=(offlinePractice?'Offline practice · ':'')+'Illustrative '+percentage+'% discount (minimum $25). NOT a Shopify coupon or redeemable prize.';","reward.textContent='Practice complete. Virtual stars only.';");

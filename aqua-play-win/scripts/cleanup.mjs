@@ -1,9 +1,9 @@
 import pg from 'pg';
-const pool=new pg.Pool({connectionString:process.env.DATABASE_URL});
+import {cleanupExpired} from '../rewards/maintenance.js';
+if(!process.env.DATABASE_URL)throw Error('Set DATABASE_URL before cleanup');
+const pool=new pg.Pool({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:10000});
 try {
- await pool.query('DELETE FROM arcade_login_requests WHERE expires_at<now()');
- await pool.query('DELETE FROM arcade_logins WHERE expires_at<now()');
- await pool.query("DELETE FROM arcade_challenges WHERE created_at<now()-interval '2 days'");
- await pool.query('DELETE FROM arcade_deleted_accounts WHERE expires_at<now()');
+ await cleanupExpired(pool);
  console.log('Expired reward-session records removed');
-}finally{await pool.end()}
+}catch{throw Error('Rewards cleanup failed. Check the private database connection')}
+finally{await pool.end()}

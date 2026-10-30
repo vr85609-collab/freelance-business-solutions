@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Games are bundled. No Internet, ads, camera, microphone or location permission. -->
-    <application android:allowBackup="false" android:usesCleartextTraffic="false"
+    <application android:allowBackup="false" android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules" android:usesCleartextTraffic="false"
         android:label="Aqua Arcade" android:icon="@mipmap/ic_launcher" android:theme="@style/AppTheme"
         android:supportsRtl="true">
         <activity android:name=".MainActivity" android:exported="true">

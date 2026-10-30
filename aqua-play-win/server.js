@@ -32,6 +32,7 @@ const server=http.createServer(async(req,res)=>{
   '/rewards.js':['./public/rewards.js','text/javascript; charset=utf-8'],
   '/rewards-admin.js':['./public/rewards-admin.js','text/javascript; charset=utf-8'],
   '/privacy':['./public/privacy.html','text/html; charset=utf-8'],
+  '/android-privacy':['./public/android-privacy.html','text/html; charset=utf-8'],
   '/rewards-terms':['./public/rewards-terms.html','text/html; charset=utf-8'],
   '/delete-account':['./public/delete-account.html','text/html; charset=utf-8'],
   '/rewards-admin':['./public/rewards-admin.html','text/html; charset=utf-8'],

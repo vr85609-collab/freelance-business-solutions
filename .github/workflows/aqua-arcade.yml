@@ -32,6 +32,11 @@ jobs:
           cache: npm
           cache-dependency-path: aqua-play-win/package-lock.json
       - run: npm ci
+      - name: Verify production database initialization
+        run: npm run rewards:prepare
+        env:
+          DATABASE_URL: postgres://arcade:local-test-only@localhost:5432/arcade_test
+          ARCADE_MIGRATE_ON_START: 'true'
       - run: npm test
   android:
     runs-on: ubuntu-latest

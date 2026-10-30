@@ -2,6 +2,7 @@ import {timingSafeEqual} from 'node:crypto';
 import pg from 'pg';
 import {RewardsService} from './service.js';
 import {POLICY,REWARD_PRODUCTS} from './policy.js';
+import {startMaintenance} from './maintenance.js';
 const COOKIE='__Host-aqua-session',LOGIN='__Host-aqua-login';
 const cookies=req=>Object.fromEntries((req.headers.cookie||'').split(';').map(s=>s.trim().split('=')));
 const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});res.end(JSON.stringify(data))};
@@ -11,7 +12,8 @@ const cookie=(res,name,value,maxAge)=>res.setHeader('Set-Cookie',name+'='+value+
 export async function requestBody(req){let data='',size=0;for await(const chunk of req){size+=Buffer.byteLength(chunk);if(size>262144)throw Error('Request too large');data+=chunk}return JSON.parse(data||'{}')}
 export function createRewardsHandler(env=process.env){
  const configured=!!env.DATABASE_URL&&!!env.SHOPIFY_SHOP&&!!env.SHOPIFY_API_SECRET&&!!env.APP_ORIGIN&&env.ARCADE_FRAUD_SALT?.length>=32;
- const pool=configured?new pg.Pool({connectionString:env.DATABASE_URL,max:8}):null;
+ const pool=configured?new pg.Pool({connectionString:env.DATABASE_URL,max:8,connectionTimeoutMillis:5000}):null;
+ if(pool){pool.on('error',()=>console.warn('Rewards database connection interrupted'));startMaintenance(pool)}
  const service=pool?new RewardsService(pool,env):null;
  const rates=new Map();
  const allowed=new Set(['memory','sequence','lights','twenty','tictac','connect','recall','focus','code','slider','cards','blocks','wordsearch','wordtiles','sudoku','mines','reversi','gomoku','dots','fleet','nonogram','maze','crates','pipes','knight','queens','ladder','anagram','hangman','make24','gems','pegs','hanoi','nim']);

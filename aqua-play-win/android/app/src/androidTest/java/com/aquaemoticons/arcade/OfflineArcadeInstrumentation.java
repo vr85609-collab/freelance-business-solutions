@@ -18,7 +18,7 @@ public final class OfflineArcadeInstrumentation extends Instrumentation {
         try {
             new OfflineArcadeTest(this).offlineGamesProgressLanguagesAndScreenshots();
             result.putString("aqua_result", "PASS");
-            result.putString("stream", "\nAll 36 games, store link, input guards, progress, language, theme and effects persistence passed.\n");
+            result.putString("stream", "\nAll 36 solo games, three pass-and-play games, external links, input guards, progress, language, theme and effects persistence passed.\n");
             finish(Activity.RESULT_OK, result);
         } catch (Throwable failure) {
             result.putString("aqua_result", "FAIL");

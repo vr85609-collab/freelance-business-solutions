@@ -67,7 +67,7 @@ public final class OfflineArcadeTest {
     private void ready(ActivitySession scene) throws Exception {
         long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
         while (System.nanoTime() < until) {
-            if ("true".equals(js(scene, "typeof keys !== 'undefined' && Object.keys(keys).length === 36 && !!window.AquaCatalog && !!window.AquaLanguage && !!window.AquaExperience"))) return;
+            if ("true".equals(js(scene, "typeof keys !== 'undefined' && Object.keys(keys).length === 36 && !!window.AquaCatalog && !!window.AquaLanguage && !!window.AquaExperience && !!window.AquaMultiplayer"))) return;
             Thread.sleep(100);
         }
         fail("Bundled arcade did not initialize");
@@ -95,9 +95,11 @@ public final class OfflineArcadeTest {
             assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, out));
         } finally { bitmap.recycle(); }
     }
-    private void storeLinkOpensBrowser(ActivitySession scene) throws Exception {
-        assertEquals("\"https://aquaemoticons.com\"", js(scene, "document.querySelector('#shopStoreLink').getAttribute('href')"));
-        JSONArray rect = new JSONArray(js(scene, "(()=>{const r=document.querySelector('#shopStoreLink').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
+    private void externalLinkOpensBrowser(ActivitySession scene, String selector, String expectedUrl, String host) throws Exception {
+        assertEquals("\"" + expectedUrl + "\"", js(scene, "document.querySelector('" + selector + "').getAttribute('href')"));
+        js(scene, "document.querySelector('" + selector + "').scrollIntoView({block:'center'});");
+        Thread.sleep(250);
+        JSONArray rect = new JSONArray(js(scene, "(()=>{const r=document.querySelector('" + selector + "').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
         int[] origin = new int[2];
         AtomicReference<Integer> width = new AtomicReference<>();
         scene.onActivity(activity -> {
@@ -112,7 +114,7 @@ public final class OfflineArcadeTest {
         float y = origin[1] + (float) rect.getDouble(1) * scale;
         Instrumentation instrumentation = this.instrumentation;
         IntentFilter filter = new IntentFilter(Intent.ACTION_VIEW);
-        filter.addDataScheme("https"); filter.addDataAuthority("aquaemoticons.com", null);
+        filter.addDataScheme("https"); filter.addDataAuthority(host, null);
         Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(filter, null, true);
         try {
             long down = SystemClock.uptimeMillis();
@@ -139,7 +141,7 @@ public final class OfflineArcadeTest {
             js(scene, "document.querySelector('#catalog').scrollIntoView();");
             screenshot(scene, "08-illustrated-library");
             js(scene, "window.scrollTo(0,0);");
-            storeLinkOpensBrowser(scene);
+            externalLinkOpensBrowser(scene, "#shopStoreLink", "https://aquaemoticons.com", "aquaemoticons.com");
             // Open every real bundled game, including those below the initial library page.
             String ids = js(scene, "Object.keys(keys).join(',')").replace("\"", "");
             assertEquals(36, ids.split(",").length);
@@ -162,6 +164,13 @@ public final class OfflineArcadeTest {
                 js(scene, "home();");
             }
             assertEquals("[]", js(scene, "window.__arcadeErrors"));
+            // Human opponents are separate from the 36 solo engines and award no stars.
+            assertEquals("true", js(scene, "home(); document.querySelector('[data-category=Multiplayer]').click(); document.body.dataset.mode==='multiplayer' && document.querySelectorAll('[data-mp-game]').length===3"));
+            externalLinkOpensBrowser(scene, "#mpBrowser", "https://aquaemoticons-play-win.onrender.com/?multiplayer=1", "aquaemoticons-play-win.onrender.com");
+            assertEquals("true", js(scene, "document.querySelector('#mpLocal').click(); [0,3,1,4,2].forEach(i=>document.querySelectorAll('#mpBoard button')[i].click()); document.querySelector('#mpStatus').textContent.includes('Player 1 wins') && progress.stars===0"));
+            assertEquals("true", js(scene, "document.querySelector('#mpLobbyButton').click(); document.querySelector('#mpGame').value='connect'; document.querySelector('#mpLocal').click(); [0,1,0,1,0,1,0].forEach(i=>document.querySelectorAll('#mpColumns button')[i].click()); document.querySelector('#mpStatus').textContent.includes('Player 1 wins') && progress.stars===0"));
+            assertEquals("true", js(scene, "document.querySelector('#mpLobbyButton').click(); document.querySelector('#mpGame').value='reversi'; document.querySelector('#mpLocal').click(); document.querySelectorAll('#mpBoard button:not(:disabled)').length===4"));
+            js(scene, "home();");
             // Complete a real game via its input handlers and check persisted progress.
             assertEquals("true", js(scene, "open('focus'); for(let n=1;n<=16;n++) [...document.querySelectorAll('#board button')].find(b=>b.textContent===String(n)).click(); finished && progress.stars===20 && progress.finished===1"));
             js(scene, "home(); document.querySelector('#themeToggle').click();");

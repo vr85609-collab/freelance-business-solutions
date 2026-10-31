@@ -53,7 +53,7 @@ public final class MainActivity extends Activity {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 if ("https".equals(uri.getScheme()) && HOST.equals(uri.getHost())) return false;
-                if ("https".equals(uri.getScheme()) && "aquaemoticons.com".equals(uri.getHost()) && request.hasGesture()) {
+                if ("https".equals(uri.getScheme()) && ("aquaemoticons.com".equals(uri.getHost()) || ("aquaemoticons-play-win.onrender.com".equals(uri.getHost()) && "/".equals(uri.getPath()) && "1".equals(uri.getQueryParameter("multiplayer")))) && request.hasGesture()) {
                     try { startActivity(new Intent(Intent.ACTION_VIEW, uri)); } catch (ActivityNotFoundException ignored) { }
                 }
                 return true;
@@ -64,13 +64,13 @@ public final class MainActivity extends Activity {
     @Override protected void onSaveInstanceState(Bundle out) { webView.saveState(out); super.onSaveInstanceState(out); }
     @Override public void onBackPressed() { handleBack(); }
     private void handleBack() {
-        webView.evaluateJavascript("Boolean(document.body.dataset.mode === 'playing')", result -> {
+        webView.evaluateJavascript("Boolean(['playing','multiplayer'].includes(document.body.dataset.mode))", result -> {
             if ("true".equals(result)) webView.evaluateJavascript("home()", null);
             else if (webView.canGoBack()) webView.goBack();
             else finish();
         });
     }
-    @Override protected void onPause() { webView.onPause(); super.onPause(); }
-    @Override protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
+    @Override protected void onPause() { webView.onPause(); webView.pauseTimers(); super.onPause(); }
+    @Override protected void onResume() { super.onResume(); if (webView != null) { webView.resumeTimers(); webView.onResume(); } }
     @Override protected void onDestroy() { webView.destroy(); super.onDestroy(); }
 }

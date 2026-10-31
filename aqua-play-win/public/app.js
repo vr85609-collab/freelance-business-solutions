@@ -10,8 +10,8 @@ progress.stars=Number.isFinite(progress.stars)?Math.max(0,progress.stars):0;prog
 let game=null,gameState=null,gameId=0,finished=false,dailyMode=false,run=0;
 let cleanupTasks=[];
 function onCleanup(fn){cleanupTasks.push(fn)}
-function leaveGame(){gameId++;run=gameId;for(const fn of cleanupTasks.splice(0))fn()}
-function gameTimeout(fn,delay){const token=run;const id=setTimeout(()=>{if(token===run)fn()},delay);onCleanup(()=>clearTimeout(id));return id}
+function leaveGame(){window.AquaExperience?.stop();gameId++;run=gameId;for(const fn of cleanupTasks.splice(0))fn()}
+function gameTimeout(fn,delay){const token=run;let dispose;const id=setTimeout(()=>{const at=cleanupTasks.indexOf(dispose);if(at>=0)cleanupTasks.splice(at,1);if(token===run)fn()},delay);dispose=()=>clearTimeout(id);onCleanup(dispose);return id}
 function stopInputs(){document.querySelectorAll('#board button,#board input,#gameControls button,#gameControls select,#gameControls input').forEach(el=>el.disabled=true)}
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const rnd=n=>Math.floor(Math.random()*n);
@@ -20,10 +20,10 @@ const btn=(text,fn,parent=controls)=>{let b=document.createElement('button');b.c
 function save(){try{localStorage.setItem(storeKey,JSON.stringify(progress))}catch{}$('#stars').textContent=progress.stars;$('#completed').textContent=progress.finished;$('#days').textContent=progress.dates.length;renderDaily()}
 function dailyGame(){const date=today();let hash=[...date].reduce((a,c)=>a*31+c.charCodeAt(0),0);return ['memory','tictac','sequence','lights','twenty'][Math.abs(hash)%5]}
 function renderDaily(){const d=today(),done=!!progress.daily[d];$('#dailyBadge').textContent=done?'✓ Completed today':'Available today';$('#dailyDescription').textContent=(done?'Nicely done! You can replay whenever you want. ':'Today’s pick: '+keys[dailyGame()]+'. ')+'No penalty for missing a day.';$('#dailyStart').textContent=done?'Play it again':'Try daily challenge'}
-function win(stars=5,note='Challenge complete!'){if(finished)return;finished=true;stopInputs();progress.stars+=stars;progress.finished++;if(!progress.dates.includes(today()))progress.dates.push(today());if(dailyMode&&!progress.daily[today()]){progress.daily[today()]=true;progress.stars+=5;note+=' Daily challenge bonus: 5 stars!'}save();feedback.textContent='🎉 '+note+' +'+stars+' stars';btn('Play again',()=>open(game,dailyMode));btn('Explore games',home)}
+function win(stars=5,note='Challenge complete!'){if(finished)return;finished=true;stopInputs();progress.stars+=stars;progress.finished++;if(!progress.dates.includes(today()))progress.dates.push(today());if(dailyMode&&!progress.daily[today()]){progress.daily[today()]=true;progress.stars+=5;note+=' Daily challenge bonus: 5 stars!'}save();feedback.textContent='🎉 '+note+' +'+stars+' stars';window.AquaExperience?.celebrate();btn('Play again',()=>open(game,dailyMode));btn('Explore games',home)}
 function canUseGameKeyboard(e){return !document.getElementById('helpDialog')?.open&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.target?.closest?.('input,select,textarea,[contenteditable]:not([contenteditable="false"])')}
 function makeBoard(c,klass=''){board.className='board '+klass;c.forEach((v,i)=>{let b=document.createElement('button');b.textContent=v;b.dataset.index=i;board.appendChild(b)});return [...board.children]}
-function home(){leaveGame();game=null;clean();$('#play').classList.add('hidden');$('#catalog').classList.remove('hidden');document.body.dataset.mode='home'}
+function home(){window.AquaMultiplayer?.close();leaveGame();game=null;clean();$('#play').classList.add('hidden');$('#catalog').classList.remove('hidden');document.body.dataset.mode='home'}
 function open(name,asDaily=false){if(!keys[name])return;leaveGame();game=name;dailyMode=asDaily;finished=false;clean();$('#play').classList.remove('hidden');$('#catalog').classList.add('hidden');document.body.dataset.mode='playing';document.body.dataset.game=name;$('#gameTitle').textContent=keys[name];$('#genre').textContent=asDaily?'☀️ Daily Challenge':'🎮 Free Play';$('#instructions').textContent=gameHelp[name]?.win||tips[name]||'';updateQuickGuide(name);document.querySelector('#rulesDetails')?.removeAttribute('open');window.AquaCatalog?.record(name);$('#play').scrollIntoView({block:'start',behavior:'instant'});({bubbles,tictac,memory,sequence,lights,twenty,connect,recall,focus,code,slider,higher,...extraGames}[name])()}
 document.querySelectorAll('[data-game]').forEach(el=>el.onclick=()=>open(el.dataset.game));
 $('#back').onclick=home;$('#restart').onclick=()=>{if(game)open(game,dailyMode)};$('#dailyStart').onclick=()=>open(dailyGame(),true);$('#dailyButton').onclick=()=>open(dailyGame(),true);
@@ -116,22 +116,23 @@ function twenty(){
   });
   status.textContent='Score: '+score+' • Largest tile: '+Math.max(...a)+' • Moves: '+moves;
  }
- function process(line){
-  const values=line.filter(Boolean),out=[];
+ function process(line,indices){
+  const values=line.map((value,i)=>({value,from:indices[i]})).filter(x=>x.value),out=[],paths=[];
   let merges=0;
   for(let i=0;i<values.length;i++){
-   if(values[i]===values[i+1]){const combined=values[i]*2;out.push(combined);score+=combined;merges++;i++}
-   else out.push(values[i]);
+   if(values[i].value===values[i+1]?.value){const combined=values[i].value*2;paths.push({to:indices[out.length],from:values[i].from,merged:true});out.push(combined);score+=combined;merges++;i++}
+   else {paths.push({to:indices[out.length],from:values[i].from,merged:false});out.push(values[i].value);}
   }
-  return {values:[...out,...Array(4-out.length).fill(0)],merges};
+  return {values:[...out,...Array(4-out.length).fill(0)],merges,paths};
  }
  function move(dir){
   if(game!=='twenty'||finished||locked)return;
-  const before=[...a];let merged=0;
+  const before=[...a];let merged=0,paths=[];
   for(let r=0;r<4;r++){
    const indices=Array.from({length:4},(_,c)=>dir==='left'||dir==='right'?r*4+c:c*4+r);
    if(dir==='right'||dir==='down')indices.reverse();
-   const result=process(indices.map(i=>a[i]));
+   const result=process(indices.map(i=>a[i]),indices);
+   paths.push(...result.paths);
    merged+=result.merges;
    indices.forEach((i,j)=>a[i]=result.values[j]);
   }
@@ -143,6 +144,7 @@ function twenty(){
   const moved=a.map((v,i)=>v!==before[i]?i:-1).filter(i=>i>=0);
   const newTile=spawn();
   show(moved,newTile);
+  window.AquaExperience?.moveTiles(bs,paths,newTile);
   const arrow={up:'↑',down:'↓',left:'←',right:'→'}[dir];
   explanation.textContent='All tiles moved '+arrow+' '+dir+'. '+(merged?merged+' matching pair'+(merged>1?'s':'')+' merged! ':'')+'Purple outlines show changes; the green outline marks the NEW tile.';
   if(a.includes(2048)){win(35,'You merged your way to 2048!');return}

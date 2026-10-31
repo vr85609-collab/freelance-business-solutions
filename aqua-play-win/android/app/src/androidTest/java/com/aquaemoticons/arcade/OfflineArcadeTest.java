@@ -8,23 +8,51 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
 import android.webkit.WebView;
-import androidx.test.core.app.ActivityScenario;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
-import static org.junit.Assert.*;
 
 /** Runs against the real packaged WebView with no Internet permission. */
-@RunWith(AndroidJUnit4.class)
 public final class OfflineArcadeTest {
-    private String js(ActivityScenario<MainActivity> scene, String expression) throws Exception {
+    private final OfflineArcadeInstrumentation instrumentation;
+    OfflineArcadeTest(OfflineArcadeInstrumentation instrumentation) { this.instrumentation = instrumentation; }
+    private static void assertTrue(boolean value) { assertTrue("Expected true", value); }
+    private static void assertTrue(String message, boolean value) { if (!value) throw new AssertionError(message); }
+    private static void assertNotNull(String message, Object value) { assertTrue(message, value != null); }
+    private static void assertEquals(Object expected, Object actual) { assertEquals("Values differ", expected, actual); }
+    private static void assertEquals(String message, Object expected, Object actual) {
+        if (!java.util.Objects.equals(expected, actual)) throw new AssertionError(message + ": expected " + expected + ", got " + actual);
+    }
+    private static void fail(String message) { throw new AssertionError(message); }
+    private static final class ActivitySession implements AutoCloseable {
+        private final OfflineArcadeInstrumentation runner;
+        private MainActivity activity;
+        private ActivitySession(OfflineArcadeInstrumentation runner, MainActivity activity) { this.runner = runner; this.activity = activity; }
+        static ActivitySession launch(OfflineArcadeInstrumentation runner) {
+            Intent intent = new Intent(runner.getTargetContext(), MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            MainActivity activity = (MainActivity) runner.startActivitySync(intent);
+            runner.waitForIdleSync();
+            return new ActivitySession(runner, activity);
+        }
+        void onActivity(java.util.function.Consumer<MainActivity> action) { runner.runOnMainSync(() -> action.accept(activity)); }
+        void recreate() throws Exception {
+            MainActivity previous = activity;
+            runner.resumedActivity = null;
+            onActivity(MainActivity::recreate);
+            long until = SystemClock.uptimeMillis() + 15000;
+            while (SystemClock.uptimeMillis() < until && (runner.resumedActivity == null || runner.resumedActivity == previous)) Thread.sleep(50);
+            assertTrue("Recreated activity did not resume", runner.resumedActivity instanceof MainActivity && runner.resumedActivity != previous);
+            activity = (MainActivity) runner.resumedActivity;
+            runner.waitForIdleSync();
+        }
+        @Override public void close() { onActivity(MainActivity::finish); runner.waitForIdleSync(); }
+    }
+
+    private String js(ActivitySession scene, String expression) throws Exception {
         CountDownLatch done = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
         scene.onActivity(activity -> {
@@ -36,15 +64,15 @@ public final class OfflineArcadeTest {
         assertTrue("WebView JavaScript timed out", done.await(10, TimeUnit.SECONDS));
         return result.get();
     }
-    private void ready(ActivityScenario<MainActivity> scene) throws Exception {
+    private void ready(ActivitySession scene) throws Exception {
         long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
         while (System.nanoTime() < until) {
-            if ("true".equals(js(scene, "typeof keys !== 'undefined' && Object.keys(keys).length === 36 && !!window.AquaCatalog && !!window.AquaLanguage"))) return;
+            if ("true".equals(js(scene, "typeof keys !== 'undefined' && Object.keys(keys).length === 36 && !!window.AquaCatalog && !!window.AquaLanguage && !!window.AquaExperience && !!window.AquaMultiplayer"))) return;
             Thread.sleep(100);
         }
         fail("Bundled arcade did not initialize");
     }
-    private void screenshot(ActivityScenario<MainActivity> scene, String name) throws Exception {
+    private void screenshot(ActivitySession scene, String name) throws Exception {
         // Fence the actual WebView compositor; JS completion alone can capture an older page.
         CountDownLatch presented = new CountDownLatch(1);
         scene.onActivity(activity -> {
@@ -58,18 +86,20 @@ public final class OfflineArcadeTest {
             });
         });
         assertTrue("WebView did not present the requested screenshot state", presented.await(15, TimeUnit.SECONDS));
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
-        Bitmap bitmap = InstrumentationRegistry.getInstrumentation().getUiAutomation().takeScreenshot();
+        instrumentation.waitForIdleSync();
+        Bitmap bitmap = instrumentation.getUiAutomation().takeScreenshot();
         assertNotNull("Screenshot unavailable", bitmap);
-        File folder = new File(InstrumentationRegistry.getInstrumentation().getTargetContext().getExternalFilesDir(null), "screenshots");
+        File folder = new File(instrumentation.getTargetContext().getExternalFilesDir(null), "screenshots");
         assertTrue(folder.isDirectory() || folder.mkdirs());
         try (FileOutputStream out = new FileOutputStream(new File(folder, name + ".png"))) {
             assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG, 100, out));
         } finally { bitmap.recycle(); }
     }
-    private void storeLinkOpensBrowser(ActivityScenario<MainActivity> scene) throws Exception {
-        assertEquals("\"https://aquaemoticons.com\"", js(scene, "document.querySelector('#shopStoreLink').getAttribute('href')"));
-        JSONArray rect = new JSONArray(js(scene, "(()=>{const r=document.querySelector('#shopStoreLink').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
+    private void externalLinkOpensBrowser(ActivitySession scene, String selector, String expectedUrl, String host) throws Exception {
+        assertEquals("\"" + expectedUrl + "\"", js(scene, "document.querySelector('" + selector + "').getAttribute('href')"));
+        js(scene, "document.querySelector('" + selector + "').scrollIntoView({block:'center'});");
+        Thread.sleep(250);
+        JSONArray rect = new JSONArray(js(scene, "(()=>{const r=document.querySelector('" + selector + "').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
         int[] origin = new int[2];
         AtomicReference<Integer> width = new AtomicReference<>();
         scene.onActivity(activity -> {
@@ -82,9 +112,9 @@ public final class OfflineArcadeTest {
         float scale = width.get() / (float) rect.getDouble(2);
         float x = origin[0] + (float) rect.getDouble(0) * scale;
         float y = origin[1] + (float) rect.getDouble(1) * scale;
-        Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
+        Instrumentation instrumentation = this.instrumentation;
         IntentFilter filter = new IntentFilter(Intent.ACTION_VIEW);
-        filter.addDataScheme("https"); filter.addDataAuthority("aquaemoticons.com", null);
+        filter.addDataScheme("https"); filter.addDataAuthority(host, null);
         Instrumentation.ActivityMonitor monitor = instrumentation.addMonitor(filter, null, true);
         try {
             long down = SystemClock.uptimeMillis();
@@ -98,19 +128,20 @@ public final class OfflineArcadeTest {
             assertEquals("Store link must open the external browser for the correct store", 1, monitor.getHits());
         } finally { instrumentation.removeMonitor(monitor); }
     }
-    @Test public void offlineGamesProgressLanguagesAndScreenshots() throws Exception {
-        try (ActivityScenario<MainActivity> scene = ActivityScenario.launch(MainActivity.class)) {
+    public void offlineGamesProgressLanguagesAndScreenshots() throws Exception {
+        try (ActivitySession scene = ActivitySession.launch(instrumentation)) {
             ready(scene);
             assertEquals("true", js(scene, "!document.querySelector('#rewardsPanel') && !document.querySelector('script[src=\"/rewards.js\"]')"));
             js(scene, "localStorage.clear(); location.reload();");
             Thread.sleep(500);
             ready(scene);
             js(scene, "window.__arcadeErrors=[]; window.addEventListener('error',e=>window.__arcadeErrors.push(e.message)); if(document.documentElement.dataset.theme==='dark')document.querySelector('#themeToggle').click(); home(); window.scrollTo(0,0);");
+            assertEquals("true", js(scene, "(()=>{const b=document.querySelector('#effectsToggle'); if(document.documentElement.dataset.effects!=='full')b.click(); return b.getAttribute('aria-pressed')==='false' && document.querySelector('#soundToggle').getAttribute('aria-pressed')==='false'})()"));
             screenshot(scene, "01-home-en");
             js(scene, "document.querySelector('#catalog').scrollIntoView();");
             screenshot(scene, "08-illustrated-library");
             js(scene, "window.scrollTo(0,0);");
-            storeLinkOpensBrowser(scene);
+            externalLinkOpensBrowser(scene, "#shopStoreLink", "https://aquaemoticons.com", "aquaemoticons.com");
             // Open every real bundled game, including those below the initial library page.
             String ids = js(scene, "Object.keys(keys).join(',')").replace("\"", "");
             assertEquals(36, ids.split(",").length);
@@ -121,8 +152,8 @@ public final class OfflineArcadeTest {
                 if (id.equals("twenty")) {
                     String before = js(scene, "document.querySelector('#board').innerHTML + document.querySelector('#playStatus').textContent");
                     js(scene, "showHelp('twenty');");
-                    InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_LEFT);
-                    InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_RIGHT);
+                    instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_LEFT);
+                    instrumentation.sendKeyDownUpSync(android.view.KeyEvent.KEYCODE_DPAD_RIGHT);
                     js(scene, "closeHelp();");
                     assertEquals("Help arrows must not move 2048 tiles", before, js(scene, "document.querySelector('#board').innerHTML + document.querySelector('#playStatus').textContent"));
                     screenshot(scene, "02-merge-2048-en");
@@ -133,6 +164,13 @@ public final class OfflineArcadeTest {
                 js(scene, "home();");
             }
             assertEquals("[]", js(scene, "window.__arcadeErrors"));
+            // Human opponents are separate from the 36 solo engines and award no stars.
+            assertEquals("true", js(scene, "home(); document.querySelector('[data-category=Multiplayer]').click(); document.body.dataset.mode==='multiplayer' && document.querySelectorAll('[data-mp-game]').length===3"));
+            externalLinkOpensBrowser(scene, "#mpBrowser", "https://aquaemoticons-play-win.onrender.com/?multiplayer=1", "aquaemoticons-play-win.onrender.com");
+            assertEquals("true", js(scene, "document.querySelector('#mpLocal').click(); [0,3,1,4,2].forEach(i=>document.querySelectorAll('#mpBoard button')[i].click()); document.querySelector('#mpStatus').textContent.includes('Player 1 wins') && progress.stars===0"));
+            assertEquals("true", js(scene, "document.querySelector('#mpLobbyButton').click(); document.querySelector('#mpGame').value='connect'; document.querySelector('#mpLocal').click(); [0,1,0,1,0,1,0].forEach(i=>document.querySelectorAll('#mpColumns button')[i].click()); document.querySelector('#mpStatus').textContent.includes('Player 1 wins') && progress.stars===0"));
+            assertEquals("true", js(scene, "document.querySelector('#mpLobbyButton').click(); document.querySelector('#mpGame').value='reversi'; document.querySelector('#mpLocal').click(); document.querySelectorAll('#mpBoard button:not(:disabled)').length===4"));
+            js(scene, "home();");
             // Complete a real game via its input handlers and check persisted progress.
             assertEquals("true", js(scene, "open('focus'); for(let n=1;n<=16;n++) [...document.querySelectorAll('#board button')].find(b=>b.textContent===String(n)).click(); finished && progress.stars===20 && progress.finished===1"));
             js(scene, "home(); document.querySelector('#themeToggle').click();");
@@ -142,9 +180,10 @@ public final class OfflineArcadeTest {
             js(scene, "open('wordsearch');");
             screenshot(scene, "06-word-search-es-dark");
             js(scene, "home();");
+            assertEquals("true", js(scene, "document.querySelector('#effectsToggle').click(); document.documentElement.dataset.effects==='light' && document.querySelector('#effectsToggle').textContent.includes('Efectos ligeros')"));
             scene.recreate();
             ready(scene);
-            assertEquals("true", js(scene, "progress.stars===20 && progress.finished===1 && window.AquaLanguage.language==='es' && document.documentElement.dataset.theme==='dark'"));
+            assertEquals("true", js(scene, "progress.stars===20 && progress.finished===1 && window.AquaLanguage.language==='es' && document.documentElement.dataset.theme==='dark' && document.documentElement.dataset.effects==='light'"));
             screenshot(scene, "07-home-es-dark");
         }
     }

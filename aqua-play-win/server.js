@@ -1,4 +1,6 @@
 import http from 'node:http';
+import {createMultiplayerHandler} from './multiplayer/rooms.js';
+const handleMultiplayer=createMultiplayerHandler();
 import {createRewardsHandler} from './rewards/http.js';
 const handleRewards=createRewardsHandler();
 import {readFile} from 'node:fs/promises';
@@ -12,6 +14,7 @@ async function body(req){let data='';for await(const chunk of req){data+=chunk;i
 const server=http.createServer(async(req,res)=>{
  try{
  const url=new URL(req.url,'http://localhost');
+ if(await handleMultiplayer(req,res,url))return;
  if(await handleRewards(req,res,url))return;
  if(req.method==='POST'&&url.pathname==='/api/start'){
   const id=randomUUID();sessions.set(id,{secret:randomInt(1,5),round:0,wins:0,expires:Date.now()+10*60_000});return json(res,200,{id,round:1,options:4});
@@ -29,6 +32,8 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='GET'&&(url.pathname==='/'||url.pathname==='/index.html')){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, must-revalidate','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'"});res.end(await readFile(new URL('./public/index.html',import.meta.url)));return}
  if(req.method==='GET'&&url.pathname==='/theme.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/theme.js',import.meta.url)));return}
  const offlineAssets={
+  '/multiplayer-rules.js':['./shared/multiplayer-rules.cjs','text/javascript; charset=utf-8'],
+  '/multiplayer.js':['./public/multiplayer.js','text/javascript; charset=utf-8'],
   '/game-art.svg':['./public/game-art.svg','image/svg+xml'],
   '/rewards.js':['./public/rewards.js','text/javascript; charset=utf-8'],
   '/rewards-admin.js':['./public/rewards-admin.js','text/javascript; charset=utf-8'],
@@ -38,6 +43,9 @@ const server=http.createServer(async(req,res)=>{
   '/delete-account':['./public/delete-account.html','text/html; charset=utf-8'],
   '/rewards-admin':['./public/rewards-admin.html','text/html; charset=utf-8'],
   '/brand-logo.png':['./public/brand-logo.png','image/png'],
+  '/brand-logo.webp':['./public/brand-logo.webp','image/webp'],
+  '/app-icon.png':['./public/app-icon.png','image/png'],
+  '/experience.js':['./public/experience.js','text/javascript; charset=utf-8'],
   '/new-games.js':['./public/new-games.js','text/javascript; charset=utf-8'],
   '/catalog.js':['./public/catalog.js','text/javascript; charset=utf-8'],
   '/arcade.css':['./public/arcade.css','text/css; charset=utf-8'],

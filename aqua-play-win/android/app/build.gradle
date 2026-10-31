@@ -14,9 +14,9 @@ android {
         applicationId 'com.aquaemoticons.arcade'
         minSdk 24
         targetSdk 36
-        versionCode 1
-        versionName '1.0.0'
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        versionCode 3
+        versionName '1.2.0'
+        testInstrumentationRunner 'com.aquaemoticons.arcade.OfflineArcadeInstrumentation'
     }
     signingConfigs {
         if (signingSupplied == signingKeys.size()) {
@@ -30,10 +30,21 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             if (signingSupplied == signingKeys.size()) signingConfig signingConfigs.upload
         }
     }
+    // Exercise the same shrinking as release on a debug-signed, installable review APK.
+    buildTypes {
+        optimizedReview {
+            initWith release
+            signingConfig signingConfigs.debug
+            matchingFallbacks = ['release']
+        }
+    }
+    testBuildType 'optimizedReview'
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -41,7 +52,4 @@ android {
 }
 dependencies {
     implementation 'androidx.webkit:webkit:1.14.0'
-    androidTestImplementation 'androidx.test:core:1.6.1'
-    androidTestImplementation 'androidx.test:runner:1.6.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 }

@@ -8,6 +8,9 @@ import android.os.Bundle;
 import android.os.Build;
 import android.window.OnBackInvokedDispatcher;
 import android.view.View;
+import android.view.WindowInsets;
+import android.graphics.Insets;
+import android.widget.FrameLayout;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -22,14 +25,24 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         webView = new WebView(this);
-        setContentView(webView);
+        webView.setTag("arcade-webview");
+        FrameLayout gameContainer = new FrameLayout(this);
+        gameContainer.addView(webView, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::handleBack);
-        // Keep the game clear of status/navigation bars with Android 15+ edge-to-edge.
-        webView.setOnApplyWindowInsetsListener((view, insets) -> {
-            view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
-                    insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+        // WebView ignores content padding: inset its parent so controls stay outside system bars.
+        gameContainer.setOnApplyWindowInsetsListener((view, insets) -> {
+            if (Build.VERSION.SDK_INT >= 30) {
+                Insets safe = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                view.setPadding(safe.left, safe.top, safe.right, safe.bottom);
+            } else {
+                view.setPadding(insets.getSystemWindowInsetLeft(), insets.getSystemWindowInsetTop(),
+                        insets.getSystemWindowInsetRight(), insets.getSystemWindowInsetBottom());
+            }
             return insets;
         });
+        setContentView(gameContainer);
+        gameContainer.requestApplyInsets();
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true); // Only packaged, first-party scripts are loaded.
         settings.setDomStorageEnabled(true);

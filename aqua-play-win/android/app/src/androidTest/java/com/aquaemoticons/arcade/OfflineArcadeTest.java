@@ -7,6 +7,10 @@ import android.content.IntentFilter;
 import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.ViewGroup;
+import android.view.View;
+import android.view.WindowInsets;
+import android.graphics.Insets;
+import android.os.Build;
 import android.webkit.WebView;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -57,12 +61,31 @@ public final class OfflineArcadeTest {
         AtomicReference<String> result = new AtomicReference<>();
         scene.onActivity(activity -> {
             ViewGroup content = activity.findViewById(android.R.id.content);
-            ((WebView) content.getChildAt(0)).evaluateJavascript(expression, value -> {
+            ((WebView) content.findViewWithTag("arcade-webview")).evaluateJavascript(expression, value -> {
                 result.set(value); done.countDown();
             });
         });
         assertTrue("WebView JavaScript timed out", done.await(10, TimeUnit.SECONDS));
         return result.get();
+    }
+    private void assertSystemBarsClear(ActivitySession scene) {
+        scene.onActivity(activity -> {
+            View decor = activity.getWindow().getDecorView();
+            WebView view = decor.findViewWithTag("arcade-webview");
+            WindowInsets insets = decor.getRootWindowInsets();
+            assertNotNull("Window insets unavailable", insets);
+            int top, bottom;
+            if (Build.VERSION.SDK_INT >= 30) {
+                Insets safe = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                top = safe.top; bottom = safe.bottom;
+            } else {
+                top = insets.getSystemWindowInsetTop(); bottom = insets.getSystemWindowInsetBottom();
+            }
+            int[] origin = new int[2], window = new int[2];
+            view.getLocationOnScreen(origin); decor.getLocationOnScreen(window);
+            assertTrue("Game overlaps status bar", origin[1] >= window[1] + top);
+            assertTrue("Game overlaps navigation bar", origin[1] + view.getHeight() <= window[1] + decor.getHeight() - bottom);
+        });
     }
     private void ready(ActivitySession scene) throws Exception {
         long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
@@ -77,7 +100,7 @@ public final class OfflineArcadeTest {
         CountDownLatch presented = new CountDownLatch(1);
         scene.onActivity(activity -> {
             ViewGroup content = activity.findViewById(android.R.id.content);
-            WebView view = (WebView) content.getChildAt(0);
+            WebView view = (WebView) content.findViewWithTag("arcade-webview");
             view.postVisualStateCallback(System.nanoTime(), new WebView.VisualStateCallback() {
                 @Override public void onComplete(long requestId) {
                     view.invalidate();
@@ -104,7 +127,7 @@ public final class OfflineArcadeTest {
         AtomicReference<Integer> width = new AtomicReference<>();
         scene.onActivity(activity -> {
             ViewGroup content = activity.findViewById(android.R.id.content);
-            WebView view = (WebView) content.getChildAt(0);
+            WebView view = (WebView) content.findViewWithTag("arcade-webview");
             view.getLocationOnScreen(origin);
             origin[0] += view.getPaddingLeft(); origin[1] += view.getPaddingTop();
             width.set(view.getWidth() - view.getPaddingLeft() - view.getPaddingRight());
@@ -131,10 +154,12 @@ public final class OfflineArcadeTest {
     public void offlineGamesProgressLanguagesAndScreenshots() throws Exception {
         try (ActivitySession scene = ActivitySession.launch(instrumentation)) {
             ready(scene);
+            assertSystemBarsClear(scene);
             assertEquals("true", js(scene, "!document.querySelector('#rewardsPanel') && !document.querySelector('script[src=\"/rewards.js\"]')"));
             js(scene, "localStorage.clear(); location.reload();");
             Thread.sleep(500);
             ready(scene);
+            assertSystemBarsClear(scene);
             js(scene, "window.__arcadeErrors=[]; window.addEventListener('error',e=>window.__arcadeErrors.push(e.message)); if(document.documentElement.dataset.theme==='dark')document.querySelector('#themeToggle').click(); home(); window.scrollTo(0,0);");
             assertEquals("true", js(scene, "(()=>{const b=document.querySelector('#effectsToggle'); if(document.documentElement.dataset.effects!=='full')b.click(); return b.getAttribute('aria-pressed')==='false' && document.querySelector('#soundToggle').getAttribute('aria-pressed')==='false'})()"));
             screenshot(scene, "01-home-en");
@@ -183,6 +208,7 @@ public final class OfflineArcadeTest {
             assertEquals("true", js(scene, "document.querySelector('#effectsToggle').click(); document.documentElement.dataset.effects==='light' && document.querySelector('#effectsToggle').textContent.includes('Efectos ligeros')"));
             scene.recreate();
             ready(scene);
+            assertSystemBarsClear(scene);
             assertEquals("true", js(scene, "progress.stars===20 && progress.finished===1 && window.AquaLanguage.language==='es' && document.documentElement.dataset.theme==='dark' && document.documentElement.dataset.effects==='light'"));
             screenshot(scene, "07-home-es-dark");
         }

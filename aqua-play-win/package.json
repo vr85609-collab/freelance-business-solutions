@@ -12,7 +12,8 @@
     "rewards:prepare": "node scripts/prepare-rewards.mjs",
     "android:sync": "node scripts/android-assets.mjs",
     "pretest": "node scripts/android-assets.mjs",
-    "size:check": "node scripts/check-size.mjs"
+    "size:check": "node scripts/check-size.mjs",
+    "test:android-assets": "node scripts/test-android-assets.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -22,6 +23,8 @@
     "pg": "8.16.3"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.3.14"
+    "@electric-sql/pglite": "0.3.14",
+    "clean-css": "5.3.3",
+    "terser": "5.51.2"
   }
 }

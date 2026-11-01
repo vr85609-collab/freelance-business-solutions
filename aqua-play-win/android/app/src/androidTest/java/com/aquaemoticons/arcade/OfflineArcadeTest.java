@@ -127,18 +127,15 @@ public final class OfflineArcadeTest {
         js(scene, "document.querySelector('" + selector + "').scrollIntoView({block:'center'});");
         Thread.sleep(250);
         JSONArray rect = new JSONArray(js(scene, "(()=>{const r=document.querySelector('" + selector + "').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,innerWidth]})()"));
-        int[] origin = new int[2];
+        AtomicReference<WebView> target = new AtomicReference<>();
         AtomicReference<Integer> width = new AtomicReference<>();
         scene.onActivity(activity -> {
-            ViewGroup content = activity.findViewById(android.R.id.content);
-            WebView view = (WebView) content.findViewWithTag("arcade-webview");
-            view.getLocationOnScreen(origin);
-            origin[0] += view.getPaddingLeft(); origin[1] += view.getPaddingTop();
-            width.set(view.getWidth() - view.getPaddingLeft() - view.getPaddingRight());
+            WebView view = activity.getWindow().getDecorView().findViewWithTag("arcade-webview");
+            target.set(view); width.set(view.getWidth());
         });
         float scale = width.get() / (float) rect.getDouble(2);
-        float x = origin[0] + (float) rect.getDouble(0) * scale;
-        float y = origin[1] + (float) rect.getDouble(1) * scale;
+        float x = (float) rect.getDouble(0) * scale;
+        float y = (float) rect.getDouble(1) * scale;
         Instrumentation instrumentation = this.instrumentation;
         IntentFilter filter = new IntentFilter(Intent.ACTION_VIEW);
         filter.addDataScheme("https"); filter.addDataAuthority(host, null);
@@ -146,10 +143,10 @@ public final class OfflineArcadeTest {
         try {
             long down = SystemClock.uptimeMillis();
             MotionEvent press = MotionEvent.obtain(down, down, MotionEvent.ACTION_DOWN, x, y, 0);
-            instrumentation.sendPointerSync(press); press.recycle();
+            scene.onActivity(activity -> target.get().dispatchTouchEvent(press)); press.recycle();
             Thread.sleep(80);
             MotionEvent release = MotionEvent.obtain(down, SystemClock.uptimeMillis(), MotionEvent.ACTION_UP, x, y, 0);
-            instrumentation.sendPointerSync(release); release.recycle();
+            scene.onActivity(activity -> target.get().dispatchTouchEvent(release)); release.recycle();
             long until = SystemClock.uptimeMillis() + 3000;
             while (monitor.getHits() == 0 && SystemClock.uptimeMillis() < until) Thread.sleep(50);
             assertEquals("Store link must open the external browser for the correct store", 1, monitor.getHits());
@@ -196,13 +193,16 @@ public final class OfflineArcadeTest {
                 js(scene, "home();");
             }
             assertEquals("[]", js(scene, "window.__arcadeErrors"));
+            instrumentation.stage("Checking multiplayer lobby");
             // Human opponents are separate from the 36 solo engines and award no stars.
             assertEquals("true", js(scene, "home(); document.querySelector('[data-category=Multiplayer]').click(); document.body.dataset.mode==='multiplayer' && document.querySelectorAll('[data-mp-game]').length===3"));
+            instrumentation.stage("Checking external friend-room link");
             externalLinkOpensBrowser(scene, "#mpBrowser", "https://aquaemoticons-play-win.onrender.com/?multiplayer=1", "aquaemoticons-play-win.onrender.com");
             assertEquals("true", js(scene, "document.querySelector('#mpLocal').click(); [0,3,1,4,2].forEach(i=>document.querySelectorAll('#mpBoard button')[i].click()); document.querySelector('#mpStatus').textContent.includes('Player 1 wins') && progress.stars===0"));
             assertEquals("true", js(scene, "document.querySelector('#mpLobbyButton').click(); document.querySelector('#mpGame').value='connect'; document.querySelector('#mpLocal').click(); [0,1,0,1,0,1,0].forEach(i=>document.querySelectorAll('#mpColumns button')[i].click()); document.querySelector('#mpStatus').textContent.includes('Player 1 wins') && progress.stars===0"));
             assertEquals("true", js(scene, "document.querySelector('#mpLobbyButton').click(); document.querySelector('#mpGame').value='reversi'; document.querySelector('#mpLocal').click(); document.querySelectorAll('#mpBoard button:not(:disabled)').length===4"));
             js(scene, "home();");
+            instrumentation.stage("Checking completed game and persisted settings");
             // Complete a real game via its input handlers and check persisted progress.
             assertEquals("true", js(scene, "open('focus'); for(let n=1;n<=16;n++) [...document.querySelectorAll('#board button')].find(b=>b.textContent===String(n)).click(); finished && progress.stars===20 && progress.finished===1"));
             js(scene, "home(); document.querySelector('#themeToggle').click();");

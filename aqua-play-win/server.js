@@ -32,6 +32,8 @@ const server=http.createServer(async(req,res)=>{
  if(req.method==='GET'&&(url.pathname==='/'||url.pathname==='/index.html')){res.writeHead(200,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, must-revalidate','Content-Security-Policy':"default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'"});res.end(await readFile(new URL('./public/index.html',import.meta.url)));return}
  if(req.method==='GET'&&url.pathname==='/theme.js'){res.writeHead(200,{'Content-Type':'text/javascript; charset=utf-8','Cache-Control':'no-store, must-revalidate'});res.end(await readFile(new URL('./public/theme.js',import.meta.url)));return}
  const offlineAssets={
+  '/ocean-art.svg':['./public/ocean-art.svg','image/svg+xml'],
+  '/ocean-hero.webp':['./public/ocean-hero.webp','image/webp'],
   '/multiplayer-rules.js':['./shared/multiplayer-rules.cjs','text/javascript; charset=utf-8'],
   '/multiplayer.js':['./public/multiplayer.js','text/javascript; charset=utf-8'],
   '/game-art.svg':['./public/game-art.svg','image/svg+xml'],

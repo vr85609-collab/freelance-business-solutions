@@ -14,7 +14,7 @@
  const translate=s=>window.AquaLanguage?.translate?.(s)||s;
  for(const name of ['all','Multiplayer','Puzzles','Strategy','Words','Logic','Memory','Numbers','Cards','Quick play']){const b=document.createElement('button');b.type='button';b.className='category-tab';b.textContent=name==='all'?pair('All types','Todos los tipos'):name==='Multiplayer'?pair('Multiplayer','Multijugador'):name;b.dataset.category=name;b.setAttribute('aria-pressed',String(name==='all'));b.onclick=()=>{if(name==='Multiplayer'){window.AquaMultiplayer?.show();return;}category=name;limit=12;render()};categoryBar.appendChild(b)}
  function render(){
-  const query=search.value.trim().toLocaleLowerCase();let ids=view==='favorites'?favorites:view==='recent'?recent:[...new Set(['gems','sudoku','cards','maze','wordsearch','mines','blocks','reversi','anagram','hanoi','queens','nim',...Object.keys(keys)])];
+  const query=search.value.trim().toLocaleLowerCase();let ids=view==='favorites'?favorites:view==='recent'?recent:[...new Set(['blocks','twenty','wordsearch','cards','gems','sudoku','maze','mines','reversi','anagram','hanoi','queens','nim',...Object.keys(keys)])];
   ids=ids.filter(id=>(category==='all'||categoryMap[id]===category)&&(!query||[title(id),translate(title(id)),metadata(id).tag,translate(metadata(id).tag),categoryMap[id],translate(categoryMap[id])].some(s=>s.toLocaleLowerCase().includes(query))));
   categoryBar.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category===category)));
   document.querySelectorAll('[data-library-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.libraryView===view)));

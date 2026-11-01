@@ -1,5 +1,6 @@
 import {readFile,writeFile,mkdir,copyFile,readdir,rm} from 'node:fs/promises';
 import {parseHTML} from 'linkedom';
+import {compactAssets} from './minify-assets.mjs';
 const source=new URL('../public/',import.meta.url),target=new URL('../android/app/src/main/assets/',import.meta.url);
 await rm(target,{recursive:true,force:true});await mkdir(target,{recursive:true});
 const files=['ocean-art.svg','ocean-hero.webp','game-art.svg','app.js','extra-games.js','new-games.js','catalog.js','arcade.css','theme.js','language.js','brand-logo.webp','app-icon.png','experience.js','multiplayer.js'];
@@ -26,3 +27,5 @@ app=app.replace(/You will also see a nonredeemable demo discount:[^']*/,'These a
 app=app.replace('All Shopify discounts are DEMOS and cannot be redeemed.','No coupons or physical rewards are available in this edition.');
 await writeFile(new URL('app.js',target),app);
 console.log('Bundled 36 games. Native build contains no rewards API client, remote code, or sign-in.');
+
+await compactAssets(target);

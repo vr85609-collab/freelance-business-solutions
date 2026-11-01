@@ -13,12 +13,17 @@ public final class OfflineArcadeInstrumentation extends Instrumentation {
         super.callActivityOnResume(activity);
         resumedActivity = activity;
     }
+    void stage(String message) {
+        Bundle progress = new Bundle();
+        progress.putString("stream", "\n" + message + "\n");
+        sendStatus(0, progress);
+    }
     @Override public void onStart() {
         Bundle result = new Bundle();
         try {
             new OfflineArcadeTest(this).offlineGamesProgressLanguagesAndScreenshots();
             result.putString("aqua_result", "PASS");
-            result.putString("stream", "\nAll 36 solo games, three pass-and-play games, external links, input guards, progress, language, theme and effects persistence passed.\n");
+            result.putString("stream", "\nSystem-bar safe areas, all 36 solo games, three pass-and-play games, external links, input guards, progress, language, theme and effects persistence passed.\n");
             finish(Activity.RESULT_OK, result);
         } catch (Throwable failure) {
             result.putString("aqua_result", "FAIL");

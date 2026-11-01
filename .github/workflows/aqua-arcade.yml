@@ -37,7 +37,12 @@ jobs:
         env:
           DATABASE_URL: postgres://arcade:local-test-only@localhost:5432/arcade_test
           ARCADE_MIGRATE_ON_START: 'true'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - run: npm test
+      - run: npm run test:android-assets
   android:
     runs-on: ubuntu-latest
     defaults:
@@ -107,6 +112,7 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_2
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none -feature -Vulkan -memory 1536 -cores 2
           disable-animations: true
           working-directory: aqua-play-win
           script: bash scripts/android-device-smoke.sh
@@ -119,3 +125,4 @@ jobs:
             aqua-play-win/android/app/build/reports/androidTests/
             aqua-play-win/android/app/build/outputs/androidTest-results/
             aqua-play-win/android/instrumentation-result.txt
+            aqua-play-win/android/device-logcat.txt

@@ -11,7 +11,7 @@ android {
     compileSdk 36
     buildFeatures { buildConfig true }
     defaultConfig {
-        applicationId 'com.aquaemoticons.arcade'
+        applicationId 'com.aquaemoticons.aquaarcade'
         minSdk 24
         targetSdk 36
         versionCode 5

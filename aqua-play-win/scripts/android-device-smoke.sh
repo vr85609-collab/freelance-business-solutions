@@ -2,10 +2,10 @@
 set -euo pipefail
 # Run instrumentation directly so Gradle's post-test uninstall cannot remove screenshots.
 gradle -p android :app:assembleOptimizedReview :app:assembleOptimizedReviewAndroidTest
-# Emulate a ~10-inch portrait tablet: 1080x1920 at 220 dpi (10.0-inch diagonal).
+# Emulate a 16:9 desktop-like landscape screen at 1920x1080, 240 dpi.
 # The exact 9:16 screenshot ratio meets Google Play's screenshot requirement.
-adb shell wm size 1080x1920
-adb shell wm density 220
+adb shell wm size 1920x1080
+adb shell wm density 240
 adb shell input keyevent KEYCODE_HOME
 adb install -r android/app/build/outputs/apk/optimizedReview/app-optimizedReview.apk
 adb install -r android/app/build/outputs/apk/androidTest/optimizedReview/app-optimizedReview-androidTest.apk
